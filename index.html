@@ -3,6 +3,8 @@
 <head>
   <meta charset="UTF-8">
   <title>University Schedule Builder (Doctor Preferences)</title>
+  <!-- html2canvas for exporting schedule as image -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
   <style>
     body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background: #f5f7fa; padding: 20px; }
     h1, h2, h3 { text-align: center; color: #2c3e50; }
@@ -336,7 +338,7 @@
       display: inline-block;
     }
     
-    /* NEW: My Custom Schedule Tab with Room inputs - Improved Layout */
+    /* My Custom Schedule Tab with Room inputs - Improved Layout */
     .subject-picker {
       margin-bottom: 30px;
       padding: 20px;
@@ -396,7 +398,7 @@
       width: 100%;
     }
     
-    /* NEW: Doctor Schedule Tab */
+    /* Doctor Schedule Tab */
     .doctor-selector {
       display: flex;
       gap: 15px;
@@ -413,6 +415,14 @@
       padding: 20px;
       border-radius: 10px;
       box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+    }
+    
+    /* Export button */
+    .export-image-btn {
+      background: #f39c12;
+    }
+    .export-image-btn:hover {
+      background: #e67e22;
     }
   </style>
 </head>
@@ -479,7 +489,7 @@
 
 <h1>University Schedule Builder</h1>
 
-<!-- Tab Navigation - UPDATED with two new tabs -->
+<!-- Tab Navigation -->
 <div class="tab-navigation">
   <div class="tab active" onclick="switchTab(1)">📚 1) Subjects</div>
   <div class="tab" onclick="switchTab(2)">👥 2) Groups</div>
@@ -706,7 +716,7 @@
   </div>
 </div>
 
-<!-- NEW: Tab 6: My Custom Schedule (with room inputs under each group) -->
+<!-- Tab 6: My Custom Schedule (with room inputs under each group) -->
 <div class="tab-content" id="tab6">
   <div class="box">
     <h2>6) My Custom Schedule</h2>
@@ -716,7 +726,7 @@
         <strong>Instructions:</strong> 
         For each subject you're taking, select the specific group for Lecture, Section, and Lab (if available), 
         and enter the room number below each group. Your selections will be combined into one complete weekly schedule.
-        You can take a screenshot of the final table.
+        You can then export the schedule as a professional image.
       </p>
     </div>
     
@@ -724,12 +734,15 @@
       <!-- Subject picker items will be inserted here -->
     </div>
     
-    <div style="display: flex; gap: 15px; margin-bottom: 20px;">
+    <div style="display: flex; gap: 15px; margin-bottom: 20px; flex-wrap: wrap;">
       <button onclick="renderMyCustomSchedule()" style="flex: 1; background: #27ae60;">
         🎓 Generate My Schedule
       </button>
       <button onclick="clearMyCustomSchedule()" style="flex: 1; background: #e67e22;">
         🗑️ Clear All Selections
+      </button>
+      <button onclick="exportScheduleAsImage()" id="exportScheduleBtn" class="export-image-btn" style="flex: 1; background: #f39c12;" disabled>
+        📸 Export as Image
       </button>
     </div>
     
@@ -739,13 +752,13 @@
         <!-- Schedule table will be inserted here -->
       </div>
       <p style="text-align: center; color: #7f8c8d; margin-top: 15px;">
-        <i>Ready for screenshot! (⌘+Shift+4 on Mac, Windows Snipping Tool on PC)</i>
+        <i>Ready for export! Click the orange button above to download as image.</i>
       </p>
     </div>
   </div>
 </div>
 
-<!-- NEW: Tab 7: Doctor Schedule -->
+<!-- Tab 7: Doctor Schedule -->
 <div class="tab-content" id="tab7">
   <div class="box">
     <h2>7) Doctor Schedule</h2>
@@ -786,7 +799,7 @@ let allSchedules = [];
 let groupAvailabilityData = {}; // { subjectName: { groupName: boolean } }
 let selectedSubjectsForAvailability = new Set();
 
-// NEW: Custom schedule selections with rooms
+// Custom schedule selections with rooms
 let myScheduleSelections = {}; // { subjectName: { lectureGroup: null, sectionGroup: null, labGroup: null, lectureRoom: '', sectionRoom: '', labRoom: '' } }
 
 // Better color palette - easy on eyes with good contrast
@@ -921,7 +934,7 @@ function saveToBrowser() {
       selectedSubjectsForAvailability: Array.from(selectedSubjectsForAvailability),
       myScheduleSelections: myScheduleSelections,
       timestamp: new Date().toISOString(),
-      version: '6.0'
+      version: '7.0'
     };
     
     localStorage.setItem('universityScheduleData', JSON.stringify(data));
@@ -938,7 +951,7 @@ function loadFromBrowser() {
       const data = JSON.parse(saved);
       
       let processedData = data;
-      if (!data.version || data.version === '1.0' || data.version === '2.0' || data.version === '3.0' || data.version === '4.0' || data.version === '5.0') {
+      if (!data.version || data.version === '1.0' || data.version === '2.0' || data.version === '3.0' || data.version === '4.0' || data.version === '5.0' || data.version === '6.0') {
         processedData = convertOldFormatToNew(data);
       }
       
@@ -1036,7 +1049,7 @@ function exportData() {
       selectedSubjectsForAvailability: Array.from(selectedSubjectsForAvailability),
       myScheduleSelections: myScheduleSelections,
       timestamp: new Date().toISOString(),
-      version: '6.0'
+      version: '7.0'
     };
     
     const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
@@ -1069,7 +1082,7 @@ function importData(event) {
       }
       
       let processedData = data;
-      if (!data.version || data.version === '1.0' || data.version === '2.0' || data.version === '3.0' || data.version === '4.0' || data.version === '5.0') {
+      if (!data.version || data.version === '1.0' || data.version === '2.0' || data.version === '3.0' || data.version === '4.0' || data.version === '5.0' || data.version === '6.0') {
         processedData = convertOldFormatToNew(data);
         showNotification('🔄 Converted old format to new format');
       }
@@ -1162,6 +1175,9 @@ function resetAll() {
   
   document.getElementById('subjectName').value = '';
   document.getElementById('className').value = '';
+  
+  // Disable export button
+  document.getElementById('exportScheduleBtn').disabled = true;
   
   showNotification('🔄 All data has been reset');
 }
@@ -2354,6 +2370,7 @@ function clearMyCustomSchedule() {
   myScheduleSelections = {};
   renderCustomSchedulePicker();
   document.getElementById('myScheduleResult').style.display = 'none';
+  document.getElementById('exportScheduleBtn').disabled = true;
   autoSave();
   showNotification('✅ Custom schedule cleared');
 }
@@ -2446,6 +2463,7 @@ function renderMyCustomSchedule() {
   document.getElementById('myScheduleTable').innerHTML = '';
   document.getElementById('myScheduleTable').appendChild(table);
   document.getElementById('myScheduleResult').style.display = 'block';
+  document.getElementById('exportScheduleBtn').disabled = false;
   
   showNotification(conflict ? '⚠️ Schedule has conflicts' : '✅ Schedule generated');
 }
@@ -2531,6 +2549,38 @@ function buildScheduleTableWithRooms(classes) {
   
   tableContainer.appendChild(table);
   return tableContainer;
+}
+
+/******** EXPORT SCHEDULE AS IMAGE ********/
+function exportScheduleAsImage() {
+  const scheduleElement = document.getElementById('myScheduleTable');
+  if (!scheduleElement || scheduleElement.children.length === 0) {
+    alert('No schedule to export. Please generate your schedule first.');
+    return;
+  }
+  
+  // Show a loading notification
+  showNotification('🖼️ Generating image...', false);
+  
+  // Use html2canvas to capture the element
+  html2canvas(scheduleElement, {
+    scale: 2, // higher resolution
+    backgroundColor: '#ffffff',
+    logging: false,
+    allowTaint: false,
+    useCORS: true
+  }).then(canvas => {
+    // Create download link
+    const link = document.createElement('a');
+    link.download = `my-schedule-${new Date().toISOString().slice(0,10)}.png`;
+    link.href = canvas.toDataURL('image/png');
+    link.click();
+    
+    showNotification('✅ Schedule exported as PNG!');
+  }).catch(error => {
+    console.error('Export failed:', error);
+    showNotification('❌ Failed to export schedule. Check console.', true);
+  });
 }
 
 /******** DOCTOR SCHEDULE (TAB 7) ********/
@@ -3065,6 +3115,8 @@ window.onclick = function(event) {
 // Load data from browser when page loads
 window.addEventListener('load', () => {
   loadFromBrowser();
+  // Disable export button initially
+  document.getElementById('exportScheduleBtn').disabled = true;
 });
 
 // Initialize
