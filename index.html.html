@@ -1,0 +1,2930 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>University Schedule Builder (Doctor Preferences)</title>
+  <style>
+    body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background: #f5f7fa; padding: 20px; }
+    h1, h2, h3 { text-align: center; color: #2c3e50; }
+    .box { background: white; border-radius: 10px; padding: 20px; margin-bottom: 20px; box-shadow: 0 2px 10px rgba(0,0,0,0.1); }
+    label { display: block; margin-top: 10px; font-weight: 600; color: #34495e; }
+    input, select, button { margin-top: 5px; padding: 10px; border: 1px solid #ddd; border-radius: 5px; }
+    button { background: #3498db; color: white; border: none; cursor: pointer; font-weight: 600; transition: all 0.3s; }
+    button:hover { transform: translateY(-2px); box-shadow: 0 4px 8px rgba(0,0,0,0.1); }
+    .subject-item { padding: 10px 15px; margin: 8px 0; border-radius: 5px; display: flex; justify-content: space-between; align-items: center; border-left: 4px solid; }
+    .remove-btn { background: #e74c3c; padding: 5px 12px; font-size: 12px; color: white; border: none; border-radius: 3px; cursor: pointer; }
+    .remove-btn:hover { background: #c0392b; }
+    .edit-btn { background: #9b59b6; padding: 5px 12px; font-size: 12px; color: white; border: none; border-radius: 3px; cursor: pointer; margin-right: 5px; }
+    .edit-btn:hover { background: #8e44ad; }
+    .group-controls { display: flex; gap: 15px; margin-bottom: 20px; align-items: center; }
+    
+    /* Control Panel - Redesigned */
+    .control-panel { display: flex; flex-wrap: wrap; gap: 15px; margin-bottom: 25px; padding: 20px; background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); border-radius: 12px; box-shadow: 0 8px 16px rgba(0,0,0,0.15); }
+    .control-panel button { flex: 1; min-width: 180px; padding: 14px; font-size: 15px; display: flex; align-items: center; justify-content: center; gap: 10px; border-radius: 8px; border: none; backdrop-filter: blur(10px); background: rgba(255,255,255,0.2); transition: all 0.3s; }
+    .control-panel button:hover { background: rgba(255,255,255,0.3); transform: translateY(-3px) scale(1.02); }
+    .control-panel .reset-btn { background: rgba(231, 76, 60, 0.8); }
+    .control-panel .reset-btn:hover { background: rgba(231, 76, 60, 0.9); }
+    .control-panel .save-btn { background: rgba(46, 204, 113, 0.8); }
+    .control-panel .save-btn:hover { background: rgba(46, 204, 113, 0.9); }
+    .control-panel .export-btn { background: rgba(243, 156, 18, 0.8); }
+    .control-panel .export-btn:hover { background: rgba(243, 156, 18, 0.9); }
+    .control-panel .import-btn { background: rgba(155, 89, 182, 0.8); }
+    .control-panel .import-btn:hover { background: rgba(155, 89, 182, 0.9); }
+    .file-input { display: none; }
+    
+    /* Schedule Table Styles */
+    .schedule-table-container { overflow-x: auto; margin-top: 20px; }
+    .schedule-table { width: 100%; border-collapse: collapse; table-layout: fixed; }
+    .schedule-table th, .schedule-table td { border: 1px solid #ddd; padding: 10px; text-align: center; vertical-align: top; }
+    .schedule-table th { background: #2c3e50; color: white; font-weight: 600; position: sticky; top: 0; }
+    .day-header { background: #34495e !important; }
+    .time-header { background: #3498db !important; font-size: 12px; }
+    .time-cell { background: #f8f9fa; font-size: 12px; color: #7f8c8d; padding: 5px !important; }
+    .empty-cell { background: #f8f9fa; min-height: 60px; }
+    .class-box { padding: 8px; margin: 3px; border-radius: 4px; font-size: 12px; position: relative; }
+    .class-subject { font-weight: bold; padding: 2px 5px; border-radius: 3px; display: inline-block; margin-bottom: 3px; }
+    .class-doctor { font-style: italic; font-size: 11px; padding: 2px 5px; border-radius: 3px; margin: 3px 0; }
+    .class-type { font-size: 10px; padding: 2px 5px; border-radius: 3px; display: inline-block; margin-top: 3px; font-weight: 600; }
+    .class-group { font-size: 10px; padding: 2px 5px; border-radius: 3px; background: rgba(0,0,0,0.1); margin-top: 3px; display: inline-block; }
+    .no-instructor { color: #e74c3c; font-size: 10px; font-style: normal; background: rgba(231, 76, 60, 0.1); padding: 2px 5px; border-radius: 3px; margin: 3px 0; }
+    .edit-class-btn { background: #9b59b6; color: white; border: none; padding: 2px 6px; border-radius: 3px; font-size: 10px; cursor: pointer; margin-top: 3px; }
+    .edit-class-btn:hover { background: #8e44ad; }
+    
+    /* Results Section */
+    .result-schedule { margin-bottom: 30px; padding: 15px; background: white; border-radius: 10px; box-shadow: 0 2px 5px rgba(0,0,0,0.1); }
+    
+    /* Form Controls */
+    .class-form { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 15px; margin-bottom: 20px; padding: 15px; background: #f8f9fa; border-radius: 8px; }
+    .form-group { display: flex; flex-direction: column; }
+    
+    /* Preference Section */
+    .preference-box { margin-bottom: 15px; padding: 15px; background: #f8f9fa; border-radius: 8px; position: relative; }
+    .subject-checkbox { position: absolute; top: 15px; right: 15px; }
+    .pref-type-container { display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 20px; margin-top: 15px; }
+    .pref-type { background: white; padding: 15px; border-radius: 6px; border: 1px solid #e0e0e0; }
+    
+    /* Notification */
+    .notification { position: fixed; top: 20px; right: 20px; padding: 15px 20px; background: #2ecc71; color: white; border-radius: 5px; box-shadow: 0 2px 10px rgba(0,0,0,0.2); z-index: 1000; display: none; }
+    .notification.error { background: #e74c3c; }
+    
+    /* Modal */
+    .modal { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.5); z-index: 2000; }
+    .modal-content { background: white; margin: 10% auto; padding: 20px; border-radius: 10px; width: 90%; max-width: 500px; }
+    .modal-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; }
+    .close-modal { background: #e74c3c; color: white; border: none; padding: 5px 10px; border-radius: 3px; cursor: pointer; }
+    
+    /* Group Management */
+    .group-management { display: flex; gap: 10px; margin-top: 15px; }
+    
+    /* Color Picker */
+    .color-picker { display: flex; gap: 5px; margin-top: 10px; }
+    .color-option { width: 25px; height: 25px; border-radius: 50%; cursor: pointer; border: 2px solid transparent; }
+    .color-option.selected { border-color: #2c3e50; }
+    
+    /* Generation Options Styles */
+    .generation-options { 
+      background: #f8f9fa; 
+      border-radius: 8px; 
+      padding: 20px; 
+      margin: 20px 0; 
+      border: 2px solid #e0e0e0;
+    }
+    .option-group { 
+      margin: 15px 0; 
+      padding: 15px; 
+      background: white; 
+      border-radius: 6px; 
+      border-left: 4px solid #3498db;
+    }
+    .option-group h4 { 
+      margin: 0 0 10px 0; 
+      color: #2c3e50;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+    .option-checkbox { 
+      margin-right: 10px; 
+      transform: scale(1.2);
+      accent-color: #3498db;
+    }
+    .option-description { 
+      margin: 5px 0 0 25px; 
+      color: #7f8c8d; 
+      font-size: 14px;
+    }
+    .generation-info {
+      display: flex;
+      gap: 15px;
+      align-items: center;
+      margin-bottom: 15px;
+      flex-wrap: wrap;
+    }
+    .generation-info .selected-count {
+      background: #3498db;
+      color: white;
+      padding: 5px 10px;
+      border-radius: 15px;
+      font-weight: bold;
+      font-size: 14px;
+    }
+    
+    /* Availability Tab Styles - Group Based */
+    .availability-subject { 
+      margin-bottom: 25px; 
+      padding: 20px; 
+      background: white; 
+      border-radius: 8px; 
+      border: 2px solid #e0e0e0;
+    }
+    .availability-subject-header { 
+      display: flex; 
+      justify-content: space-between; 
+      align-items: center; 
+      margin-bottom: 15px;
+      padding-bottom: 10px;
+      border-bottom: 2px solid #f0f0f0;
+    }
+    .availability-subject-header h3 { 
+      margin: 0; 
+      text-align: left;
+      color: #2c3e50;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+    .group-count { 
+      background: #3498db; 
+      color: white; 
+      padding: 3px 10px; 
+      border-radius: 12px; 
+      font-size: 14px;
+    }
+    .availability-groups { 
+      display: grid; 
+      grid-template-columns: repeat(auto-fill, minmax(350px, 1fr)); 
+      gap: 15px; 
+      margin-top: 15px;
+    }
+    .group-card { 
+      padding: 15px; 
+      background: #f8f9fa; 
+      border-radius: 6px; 
+      border: 1px solid #ddd;
+      transition: all 0.3s;
+    }
+    .group-card:hover { 
+      transform: translateY(-2px); 
+      box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+    }
+    .group-card-header { 
+      display: flex; 
+      justify-content: space-between; 
+      align-items: center; 
+      margin-bottom: 15px;
+    }
+    .group-card-title { 
+      font-weight: 600; 
+      color: #2c3e50;
+      font-size: 16px;
+    }
+    .instructor-row { 
+      display: flex; 
+      justify-content: space-between; 
+      align-items: center; 
+      margin: 8px 0; 
+      padding: 8px; 
+      background: white; 
+      border-radius: 4px;
+    }
+    .instructor-type { 
+      font-weight: 600; 
+      color: #7f8c8d; 
+      font-size: 13px;
+      min-width: 80px;
+    }
+    .instructor-name { 
+      flex-grow: 1; 
+      text-align: right; 
+      color: #2c3e50;
+      font-size: 14px;
+    }
+    .no-instructor-name { 
+      color: #e74c3c; 
+      font-style: italic;
+      font-size: 13px;
+    }
+    .availability-checkbox { 
+      margin-top: 15px; 
+      display: flex; 
+      align-items: center; 
+      gap: 10px;
+      padding-top: 10px;
+      border-top: 1px solid #eee;
+    }
+    .availability-checkbox label { 
+      margin: 0; 
+      font-weight: 600; 
+      color: #27ae60;
+      font-size: 14px;
+    }
+    .availability-status { 
+      padding: 3px 8px; 
+      border-radius: 4px; 
+      font-size: 12px; 
+      font-weight: 600;
+    }
+    .available { background: #d5f4e6; color: #27ae60; }
+    .unavailable { background: #fadbd8; color: #e74c3c; }
+    
+    /* Subject Selection in Availability Tab */
+    .subject-selection { 
+      display: flex; 
+      flex-wrap: wrap; 
+      gap: 10px; 
+      margin-bottom: 20px;
+    }
+    .subject-chip { 
+      padding: 8px 15px; 
+      background: #ecf0f1; 
+      border-radius: 20px; 
+      display: flex; 
+      align-items: center; 
+      gap: 8px;
+      cursor: pointer;
+      transition: all 0.3s;
+      border: 2px solid transparent;
+    }
+    .subject-chip:hover { 
+      background: #d5dbdb;
+    }
+    .subject-chip.selected { 
+      background: #3498db; 
+      color: white;
+      border-color: #2980b9;
+    }
+    .subject-chip-checkbox { 
+      transform: scale(1.1);
+    }
+    
+    /* Filter Controls */
+    .filter-controls { 
+      display: flex; 
+      gap: 15px; 
+      margin-bottom: 20px; 
+      flex-wrap: wrap;
+    }
+    .filter-btn { 
+      padding: 8px 15px; 
+      border-radius: 5px; 
+      border: none; 
+      cursor: pointer; 
+      font-weight: 600;
+      transition: all 0.3s;
+    }
+    .show-available { background: #27ae60; color: white; }
+    .show-available:hover { background: #219955; }
+    .show-all { background: #3498db; color: white; }
+    .show-all:hover { background: #2980b9; }
+    .clear-selection { background: #e74c3c; color: white; }
+    .clear-selection:hover { background: #c0392b; }
+    .apply-to-all { background: #9b59b6; color: white; }
+    .apply-to-all:hover { background: #8e44ad; }
+    
+    /* Tab Navigation */
+    .tab-navigation { 
+      display: flex; 
+      overflow-x: auto; 
+      margin-bottom: 20px; 
+      background: white; 
+      border-radius: 10px; 
+      box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+    }
+    .tab { 
+      padding: 15px 25px; 
+      cursor: pointer; 
+      font-weight: 600; 
+      border-bottom: 3px solid transparent;
+      white-space: nowrap;
+      transition: all 0.3s;
+    }
+    .tab:hover { 
+      background: #f8f9fa;
+    }
+    .tab.active { 
+      border-bottom-color: #3498db; 
+      color: #3498db; 
+      background: #f0f7ff;
+    }
+    
+    /* Tab Content */
+    .tab-content { display: none; }
+    .tab-content.active { display: block; }
+    
+    /* Group Schedule Info */
+    .group-schedule-info {
+      margin-top: 10px;
+      font-size: 12px;
+      color: #7f8c8d;
+    }
+    .schedule-day {
+      background: #ecf0f1;
+      padding: 3px 6px;
+      border-radius: 3px;
+      margin-right: 5px;
+      display: inline-block;
+    }
+    
+    /* NEW: My Custom Schedule Tab */
+    .subject-picker {
+      margin-bottom: 30px;
+      padding: 20px;
+      background: #f8f9fa;
+      border-radius: 8px;
+    }
+    .subject-picker-item {
+      display: grid;
+      grid-template-columns: 1fr 1fr 1fr 1fr;
+      gap: 15px;
+      margin-bottom: 15px;
+      padding: 15px;
+      background: white;
+      border-radius: 6px;
+      border-left: 4px solid;
+      align-items: center;
+    }
+    .subject-picker-item select {
+      width: 100%;
+      padding: 8px;
+    }
+    @media (max-width: 1000px) {
+      .subject-picker-item {
+        grid-template-columns: 1fr;
+      }
+    }
+    .screenshot-ready {
+      background: white;
+      padding: 20px;
+      border-radius: 10px;
+      box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+      margin-top: 20px;
+    }
+    .screenshot-ready .schedule-table {
+      width: 100%;
+    }
+    
+    /* NEW: Doctor Schedule Tab */
+    .doctor-selector {
+      display: flex;
+      gap: 15px;
+      align-items: flex-end;
+      margin-bottom: 30px;
+      flex-wrap: wrap;
+    }
+    .doctor-selector .form-group {
+      flex: 1;
+      min-width: 250px;
+    }
+    .doctor-schedule-container {
+      background: white;
+      padding: 20px;
+      border-radius: 10px;
+      box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+    }
+  </style>
+</head>
+<body>
+
+<!-- Control Panel - Redesigned -->
+<div class="control-panel">
+  <button class="save-btn" onclick="saveToBrowser()">
+    <span style="font-size: 18px;">💾</span> Save to Browser
+  </button>
+  <button class="export-btn" onclick="exportData()">
+    <span style="font-size: 18px;">📤</span> Export JSON
+  </button>
+  <button class="import-btn" onclick="document.getElementById('importFile').click()">
+    <span style="font-size: 18px;">📥</span> Import JSON
+  </button>
+  <input type="file" id="importFile" class="file-input" accept=".json" onchange="importData(event)">
+  <button class="reset-btn" onclick="resetAll()">
+    <span style="font-size: 18px;">🔄</span> Reset All
+  </button>
+</div>
+
+<!-- Notification -->
+<div id="notification" class="notification"></div>
+
+<!-- Edit Instructor Modal -->
+<div id="editInstructorModal" class="modal">
+  <div class="modal-content">
+    <div class="modal-header">
+      <h3 style="margin: 0;">Edit Class</h3>
+      <button class="close-modal" onclick="closeEditModal()">✕</button>
+    </div>
+    <div id="modalBody">
+      <!-- Content will be added here -->
+    </div>
+  </div>
+</div>
+
+<!-- Edit Subject Modal -->
+<div id="editSubjectModal" class="modal">
+  <div class="modal-content">
+    <div class="modal-header">
+      <h3 style="margin: 0;">Edit Subject</h3>
+      <button class="close-modal" onclick="closeEditSubjectModal()">✕</button>
+    </div>
+    <div id="editSubjectBody">
+      <!-- Content will be added here -->
+    </div>
+  </div>
+</div>
+
+<!-- Edit Group Modal -->
+<div id="editGroupModal" class="modal">
+  <div class="modal-content">
+    <div class="modal-header">
+      <h3 style="margin: 0;">Edit Group</h3>
+      <button class="close-modal" onclick="closeEditGroupModal()">✕</button>
+    </div>
+    <div id="editGroupBody">
+      <!-- Content will be added here -->
+    </div>
+  </div>
+</div>
+
+<h1>University Schedule Builder</h1>
+
+<!-- Tab Navigation - UPDATED with two new tabs -->
+<div class="tab-navigation">
+  <div class="tab active" onclick="switchTab(1)">📚 1) Subjects</div>
+  <div class="tab" onclick="switchTab(2)">👥 2) Groups</div>
+  <div class="tab" onclick="switchTab(3)">⭐ 3) Preferences</div>
+  <div class="tab" onclick="switchTab(4)">✅ 4) Group Availability</div>
+  <div class="tab" onclick="switchTab(5)">🚀 5) Generate Schedules</div>
+  <div class="tab" onclick="switchTab(6)">📝 6) My Custom Schedule</div>
+  <div class="tab" onclick="switchTab(7)">👨‍⚕️ 7) Doctor Schedule</div>
+</div>
+
+<!-- Tab 1: Subjects -->
+<div class="tab-content active" id="tab1">
+  <div class="box">
+    <h2>1) Subjects</h2>
+    <div style="display: flex; gap: 10px;">
+      <input id="subjectName" placeholder="Enter subject name" style="flex-grow: 1;">
+      <button onclick="addSubject()">Add Subject</button>
+    </div>
+    <div id="subjectList" style="margin-top: 15px;"></div>
+  </div>
+</div>
+
+<!-- Tab 2: Groups -->
+<div class="tab-content" id="tab2">
+  <div class="box">
+    <h2>2) University Groups</h2>
+    <div class="group-controls">
+      <button onclick="addGroup()">➕ Add New Group</button>
+      <select id="groupSelector" onchange="selectGroup(this.value)" style="padding: 10px; min-width: 200px;">
+        <option value="">Select Group to Edit</option>
+      </select>
+    </div>
+    
+    <div id="currentGroupInfo" style="display: none; margin-bottom: 20px; padding: 15px; background: #ecf0f1; border-radius: 8px;">
+      <h3 style="margin: 0; color: #2c3e50;">Editing: <span id="groupNameDisplay" style="color: #3498db;"></span></h3>
+      <div class="group-management">
+        <button class="edit-btn" onclick="openEditGroupModal()" style="padding: 8px 15px; font-size: 14px;">✏️ Edit Group</button>
+        <button class="remove-btn" onclick="deleteCurrentGroup()" style="padding: 8px 15px; font-size: 14px;">🗑️ Delete Group</button>
+      </div>
+    </div>
+    
+    <div id="groupScheduleEditor" style="display: none;">
+      <!-- Class Form -->
+      <div class="class-form">
+        <div class="form-group">
+          <label>Subject:</label>
+          <select id="classSubject">
+            <option value="">Select Subject</option>
+          </select>
+        </div>
+        <div class="form-group">
+          <label>Type:</label>
+          <select id="classType">
+            <option value="Lecture">Lecture</option>
+            <option value="Section">Section</option>
+            <option value="Lab">Lab</option>
+          </select>
+        </div>
+        <div class="form-group">
+          <label>Instructor Name:</label>
+          <input id="className" placeholder="Enter name">
+        </div>
+        <div class="form-group">
+          <label>Day:</label>
+          <select id="classDay">
+            <option value="Saturday">Saturday</option>
+            <option value="Sunday">Sunday</option>
+            <option value="Monday">Monday</option>
+            <option value="Tuesday">Tuesday</option>
+            <option value="Wednesday">Wednesday</option>
+            <option value="Thursday">Thursday</option>
+            <option value="Friday">Friday</option>
+          </select>
+        </div>
+        <div class="form-group">
+          <label>Time Slot:</label>
+          <select id="classTime">
+            <option value="0">Lecture 1 (8:30 AM - 10:00 AM)</option>
+            <option value="1">Lecture 2 (10:30 AM - 12:00 PM)</option>
+            <option value="2">Lecture 3 (12:30 PM - 2:00 PM)</option>
+            <option value="3">Lecture 4 (2:30 PM - 4:00 PM)</option>
+            <option value="4">Lecture 5 (4:30 PM - 6:00 PM)</option>
+            <option value="5">Lecture 6 (6:30 PM - 8:00 PM)</option>
+          </select>
+        </div>
+        <div class="form-group" style="justify-content: flex-end;">
+          <button onclick="addClassToGroup()" style="height: 40px; margin-top: 25px;">Add to Schedule</button>
+        </div>
+      </div>
+      
+      <!-- Schedule Table -->
+      <div class="schedule-table-container">
+        <table class="schedule-table">
+          <thead>
+            <tr>
+              <th class="day-header">Day</th>
+              <th class="time-header">Lecture 1<br><small>8:30-10:00</small></th>
+              <th class="time-header">Lecture 2<br><small>10:30-12:00</small></th>
+              <th class="time-header">Lecture 3<br><small>12:30-2:00</small></th>
+              <th class="time-header">Lecture 4<br><small>2:30-4:00</small></th>
+              <th class="time-header">Lecture 5<br><small>4:30-6:00</small></th>
+              <th class="time-header">Lecture 6<br><small>6:30-8:00</small></th>
+            </tr>
+          </thead>
+          <tbody id="scheduleGrid">
+            <!-- Days will be inserted here -->
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Tab 3: Preferences -->
+<div class="tab-content" id="tab3">
+  <div class="box">
+    <h2>3) Doctor / TA Preferences</h2>
+    <div style="margin-bottom: 15px; padding: 10px; background: #e8f4fc; border-radius: 5px;">
+      <p style="margin: 0; font-size: 14px; color: #2c3e50;">
+        <strong>Note:</strong> Check the subjects you will take this semester. Unchecked subjects will be excluded from schedule generation.
+      </p>
+    </div>
+    <div id="preferences"></div>
+  </div>
+</div>
+
+<!-- Tab 4: Group Availability -->
+<div class="tab-content" id="tab4">
+  <div class="box">
+    <h2>4) Group Availability</h2>
+    
+    <div style="margin-bottom: 20px; padding: 15px; background: #e8f4fc; border-radius: 5px;">
+      <p style="margin: 0; font-size: 14px; color: #2c3e50;">
+        <strong>Instructions:</strong> 
+        1. Select which subjects to include in your schedule.<br>
+        2. For each subject, see which groups offer it.<br>
+        3. Check groups that are still available for registration.<br>
+        4. Unchecked groups are already full (cannot register).<br>
+        5. The system will use available groups when generating schedules.
+      </p>
+    </div>
+    
+    <div class="filter-controls">
+      <button class="filter-btn show-available" onclick="showOnlyAvailableGroups()">
+        👁️ Show Only Available Groups
+      </button>
+      <button class="filter-btn show-all" onclick="showAllGroups()">
+        👁️ Show All Groups
+      </button>
+      <button class="filter-btn clear-selection" onclick="clearAllGroupAvailability()">
+        🗑️ Mark All Groups as Full
+      </button>
+      <button class="filter-btn apply-to-all" onclick="applyGroupAvailabilityToAll()">
+        🔄 Apply to All Subjects
+      </button>
+    </div>
+    
+    <!-- Subject Selection -->
+    <div class="box">
+      <h3>Select Subjects to Include:</h3>
+      <div class="subject-selection" id="subjectSelection">
+        <!-- Subjects will be added here -->
+      </div>
+      <div style="margin-top: 15px;">
+        <button onclick="generateGroupAvailabilityView()" style="width: 100%; padding: 12px; background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);">
+          🔍 Show Group Availability
+        </button>
+      </div>
+    </div>
+    
+    <!-- Group Availability Results -->
+    <div id="availabilityResults" style="margin-top: 20px;">
+      <div id="groupAvailabilityView">
+        <!-- Group availability content will be generated here -->
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Tab 5: Generate Schedules -->
+<div class="tab-content" id="tab5">
+  <div class="box">
+    <h2>5) Generate Schedule</h2>
+    
+    <!-- Generation Options -->
+    <div class="generation-options">
+      <div class="generation-info">
+        <span class="selected-count" id="selectedSubjectsCount">0 subjects selected</span>
+        <span style="color: #7f8c8d; font-size: 14px;">Choose your preferred schedule criteria:</span>
+      </div>
+      
+      <div class="option-group">
+        <h4><input type="checkbox" id="optionMinDays" class="option-checkbox" checked> 
+        <span style="color: #27ae60;">🏫 Minimum Days Schedule</span></h4>
+        <p class="option-description">Generates schedules that require the fewest number of days at university (maximize days off).</p>
+      </div>
+      
+      <div class="option-group">
+        <h4><input type="checkbox" id="optionMinGaps" class="option-checkbox"> 
+        <span style="color: #e67e22;">⏰ Minimal Gaps Schedule</span></h4>
+        <p class="option-description">Generates schedules with the least gaps between classes (ignoring the 30-minute breaks between lectures).</p>
+      </div>
+      
+      <div class="option-group">
+        <h4><input type="checkbox" id="optionBalanced" class="option-checkbox"> 
+        <span style="color: #9b59b6;">⚖️ Balanced Schedule</span></h4>
+        <p class="option-description">Generates schedules that balance between minimum days and minimal gaps.</p>
+      </div>
+      
+      <div class="option-group">
+        <h4><input type="checkbox" id="optionAll" class="option-checkbox"> 
+        <span style="color: #3498db;">📊 Show All Possible Schedules</span></h4>
+        <p class="option-description">Shows all valid schedule combinations (can be many).</p>
+      </div>
+    </div>
+    
+    <button onclick="generateSchedules()" style="padding: 12px 25px; font-size: 16px; width: 100%; background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);">
+      🚀 Generate Selected Schedules
+    </button>
+    
+    <div id="results" style="margin-top: 30px;">
+      <div id="scheduleResults"></div>
+    </div>
+  </div>
+</div>
+
+<!-- NEW: Tab 6: My Custom Schedule -->
+<div class="tab-content" id="tab6">
+  <div class="box">
+    <h2>6) My Custom Schedule</h2>
+    
+    <div style="margin-bottom: 20px; padding: 15px; background: #e8f4fc; border-radius: 5px;">
+      <p style="margin: 0; font-size: 14px; color: #2c3e50;">
+        <strong>Instructions:</strong> 
+        For each subject you're taking, select the specific group for Lecture, Section, and Lab (if available). 
+        Your selections will be combined into one complete weekly schedule. You can take a screenshot of the final table.
+      </p>
+    </div>
+    
+    <div id="customSchedulePicker" class="subject-picker">
+      <!-- Subject picker items will be inserted here -->
+    </div>
+    
+    <div style="display: flex; gap: 15px; margin-bottom: 20px;">
+      <button onclick="renderMyCustomSchedule()" style="flex: 1; background: #27ae60;">
+        🎓 Generate My Schedule
+      </button>
+      <button onclick="clearMyCustomSchedule()" style="flex: 1; background: #e67e22;">
+        🗑️ Clear All Selections
+      </button>
+    </div>
+    
+    <div id="myScheduleResult" class="screenshot-ready" style="display: none;">
+      <h3 style="margin-top: 0; color: #2c3e50;">📅 Your Personal Schedule</h3>
+      <div id="myScheduleTable" class="schedule-table-container">
+        <!-- Schedule table will be inserted here -->
+      </div>
+      <p style="text-align: center; color: #7f8c8d; margin-top: 15px;">
+        <i>Ready for screenshot! (⌘+Shift+4 on Mac, Windows Snipping Tool on PC)</i>
+      </p>
+    </div>
+  </div>
+</div>
+
+<!-- NEW: Tab 7: Doctor Schedule -->
+<div class="tab-content" id="tab7">
+  <div class="box">
+    <h2>7) Doctor Schedule</h2>
+    
+    <div style="margin-bottom: 20px; padding: 15px; background: #e8f4fc; border-radius: 5px;">
+      <p style="margin: 0; font-size: 14px; color: #2c3e50;">
+        <strong>Instructions:</strong> 
+        Select a doctor/TA from the dropdown to see their complete weekly schedule across all groups.
+      </p>
+    </div>
+    
+    <div class="doctor-selector">
+      <div class="form-group">
+        <label>👨‍⚕️ Select Doctor/TA:</label>
+        <select id="doctorSelector" onchange="renderDoctorSchedule()">
+          <option value="">-- Choose a doctor --</option>
+        </select>
+      </div>
+      <button onclick="renderDoctorSchedule()" style="background: #9b59b6;">
+        🔍 Show Schedule
+      </button>
+    </div>
+    
+    <div id="doctorScheduleResult" class="doctor-schedule-container" style="display: none;">
+      <h3 id="doctorScheduleTitle" style="margin-top: 0; color: #2c3e50;">👨‍⚕️ Doctor's Schedule</h3>
+      <div id="doctorScheduleTable" class="schedule-table-container">
+        <!-- Doctor schedule table will be inserted here -->
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+let subjects = [];
+let groups = [];
+let currentEditingGroup = null;
+let allSchedules = [];
+let groupAvailabilityData = {}; // { subjectName: { groupName: boolean } }
+let selectedSubjectsForAvailability = new Set();
+
+// NEW: Custom schedule selections
+let myScheduleSelections = {}; // { subjectName: { lectureGroup: null, sectionGroup: null, labGroup: null } }
+
+// Better color palette - easy on eyes with good contrast
+const colorPalette = [
+  { name: "Blue", light: '#D6EAF8', dark: '#3498DB' },
+  { name: "Green", light: '#D5F4E6', dark: '#2ECC71' },
+  { name: "Purple", light: '#E8DAEF', dark: '#9B59B6' },
+  { name: "Orange", light: '#FDEBD0', dark: '#E67E22' },
+  { name: "Red", light: '#FADBD8', dark: '#E74C3C' },
+  { name: "Teal", light: '#D1F2EB', dark: '#1ABC9C' },
+  { name: "Navy", light: '#D6DBDF', dark: '#2C3E50' },
+  { name: "Pink", light: '#FAD7E0', dark: '#F06292' },
+  { name: "Lime", light: '#E8F8F5', dark: '#58D68D' },
+  { name: "Amber", light: '#FFF3CD', dark: '#FFA726' }
+];
+
+// Fixed lecture times
+const lectureTimes = [
+  { label: "Lecture 1", start: 8.5, end: 10, timeStr: "8:30 AM - 10:00 AM" },
+  { label: "Lecture 2", start: 10.5, end: 12, timeStr: "10:30 AM - 12:00 PM" },
+  { label: "Lecture 3", start: 12.5, end: 14, timeStr: "12:30 PM - 2:00 PM" },
+  { label: "Lecture 4", start: 14.5, end: 16, timeStr: "2:30 PM - 4:00 PM" },
+  { label: "Lecture 5", start: 16.5, end: 18, timeStr: "4:30 PM - 6:00 PM" },
+  { label: "Lecture 6", start: 18.5, end: 20, timeStr: "6:30 PM - 8:00 PM" }
+];
+
+const days = ["Saturday", "Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday"];
+
+// Variables for editing
+let currentEditingClass = null;
+let currentEditingSubject = null;
+let currentEditingGroupIndex = null;
+
+/******** TAB MANAGEMENT ********/
+function switchTab(tabNumber) {
+  for (let i = 1; i <= 7; i++) {
+    document.getElementById(`tab${i}`).classList.remove('active');
+    document.querySelectorAll('.tab')[i-1].classList.remove('active');
+  }
+  
+  document.getElementById(`tab${tabNumber}`).classList.add('active');
+  document.querySelectorAll('.tab')[tabNumber-1].classList.add('active');
+  
+  if (tabNumber === 4) {
+    updateSubjectSelectionView();
+  }
+  if (tabNumber === 6) {
+    renderCustomSchedulePicker();
+  }
+  if (tabNumber === 7) {
+    populateDoctorSelector();
+  }
+}
+
+/******** BACKWARD COMPATIBILITY FUNCTIONS ********/
+function convertOldFormatToNew(data) {
+  console.log("Converting old format to new format...");
+  
+  if (data.subjects && data.subjects.length > 0 && typeof data.subjects[0] === 'string') {
+    console.log("Detected old format: subjects as strings");
+    
+    data.subjects = data.subjects.map((subjectName, index) => {
+      const colorIndex = index % colorPalette.length;
+      return {
+        name: subjectName,
+        color: colorPalette[colorIndex],
+        selected: true
+      };
+    });
+  }
+  
+  if (data.groups && data.groups.length > 0) {
+    data.groups.forEach(group => {
+      if (!group.id) group.id = groups.length + 1;
+      if (!group.name) group.name = `Group ${group.id}`;
+      
+      if (group.classes && group.classes.length > 0) {
+        group.classes.forEach(cls => {
+          if (!cls.groupName) {
+            cls.groupName = group.name;
+          }
+        });
+      }
+    });
+  }
+  
+  if (data.preferences) {
+    for (const subjectName in data.preferences) {
+      if (typeof data.preferences[subjectName] === 'object') {
+        data.preferences[subjectName].selected = true;
+      }
+    }
+  }
+  
+  // Load group availability data if it exists
+  if (data.groupAvailabilityData) {
+    groupAvailabilityData = data.groupAvailabilityData;
+  }
+  
+  // Load selected subjects for availability
+  if (data.selectedSubjectsForAvailability) {
+    selectedSubjectsForAvailability = new Set(data.selectedSubjectsForAvailability);
+  }
+  
+  // Load my custom schedule selections
+  if (data.myScheduleSelections) {
+    myScheduleSelections = data.myScheduleSelections;
+  }
+  
+  return data;
+}
+
+/******** SAVE/LOAD FUNCTIONALITY ********/
+function showNotification(message, isError = false) {
+  const notification = document.getElementById('notification');
+  notification.textContent = message;
+  notification.className = isError ? 'notification error' : 'notification';
+  notification.style.display = 'block';
+  
+  setTimeout(() => {
+    notification.style.display = 'none';
+  }, 3000);
+}
+
+function saveToBrowser() {
+  try {
+    const data = {
+      subjects: subjects,
+      groups: groups,
+      preferences: getCurrentPreferences(),
+      groupAvailabilityData: groupAvailabilityData,
+      selectedSubjectsForAvailability: Array.from(selectedSubjectsForAvailability),
+      myScheduleSelections: myScheduleSelections,
+      timestamp: new Date().toISOString(),
+      version: '5.0'
+    };
+    
+    localStorage.setItem('universityScheduleData', JSON.stringify(data));
+    showNotification('✅ Data saved to browser successfully!');
+  } catch (error) {
+    showNotification('❌ Error saving data to browser', true);
+  }
+}
+
+function loadFromBrowser() {
+  try {
+    const saved = localStorage.getItem('universityScheduleData');
+    if (saved) {
+      const data = JSON.parse(saved);
+      
+      let processedData = data;
+      if (!data.version || data.version === '1.0' || data.version === '2.0' || data.version === '3.0' || data.version === '4.0') {
+        processedData = convertOldFormatToNew(data);
+      }
+      
+      subjects = processedData.subjects || [];
+      groups = processedData.groups || [];
+      groupAvailabilityData = processedData.groupAvailabilityData || {};
+      selectedSubjectsForAvailability = new Set(processedData.selectedSubjectsForAvailability || []);
+      myScheduleSelections = processedData.myScheduleSelections || {};
+      
+      groups.forEach(group => {
+        group.classes.forEach(cls => {
+          if (!cls.groupName) {
+            cls.groupName = group.name;
+          }
+        });
+      });
+      
+      subjects.forEach((subject, index) => {
+        if (typeof subject === 'string') {
+          const colorIndex = index % colorPalette.length;
+          subjects[index] = {
+            name: subject,
+            color: colorPalette[colorIndex],
+            selected: true
+          };
+        }
+      });
+      
+      renderSubjects();
+      updateClassSubjectDropdown();
+      updateGroupSelector();
+      renderPreferences();
+      updateSelectedCount();
+      updateSubjectSelectionView();
+      
+      if (processedData.preferences) {
+        setTimeout(() => loadPreferences(processedData.preferences), 100);
+      }
+      
+      showNotification('📂 Data loaded from browser');
+    }
+  } catch (error) {
+    console.error('Error loading from browser:', error);
+    showNotification('⚠️ Error loading saved data. Starting fresh.', true);
+  }
+}
+
+function getCurrentPreferences() {
+  const preferences = {};
+  subjects.forEach(subject => {
+    const lectureElem = document.getElementById(`pref_${subject.name}_Lecture`);
+    const sectionElem = document.getElementById(`pref_${subject.name}_Section`);
+    const labElem = document.getElementById(`pref_${subject.name}_Lab`);
+    const checkboxElem = document.getElementById(`check_${subject.name}`);
+    
+    if (lectureElem && sectionElem && labElem) {
+      preferences[subject.name] = {
+        Lecture: lectureElem.value,
+        Section: sectionElem.value,
+        Lab: labElem.value,
+        selected: checkboxElem ? checkboxElem.checked : true
+      };
+    }
+  });
+  return preferences;
+}
+
+function loadPreferences(preferences) {
+  for (const subjectName in preferences) {
+    const lectureElem = document.getElementById(`pref_${subjectName}_Lecture`);
+    const sectionElem = document.getElementById(`pref_${subjectName}_Section`);
+    const labElem = document.getElementById(`pref_${subjectName}_Lab`);
+    const checkboxElem = document.getElementById(`check_${subjectName}`);
+    
+    if (lectureElem) lectureElem.value = preferences[subjectName].Lecture || 'Any';
+    if (sectionElem) sectionElem.value = preferences[subjectName].Section || 'Any';
+    if (labElem) labElem.value = preferences[subjectName].Lab || 'Any';
+    if (checkboxElem) checkboxElem.checked = preferences[subjectName].selected !== false;
+    
+    const subject = subjects.find(s => s.name === subjectName);
+    if (subject && preferences[subjectName].selected !== undefined) {
+      subject.selected = preferences[subjectName].selected;
+    }
+  }
+  updateSelectedCount();
+}
+
+function exportData() {
+  try {
+    const data = {
+      subjects: subjects,
+      groups: groups,
+      preferences: getCurrentPreferences(),
+      groupAvailabilityData: groupAvailabilityData,
+      selectedSubjectsForAvailability: Array.from(selectedSubjectsForAvailability),
+      myScheduleSelections: myScheduleSelections,
+      timestamp: new Date().toISOString(),
+      version: '5.0'
+    };
+    
+    const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `university-schedule-${new Date().toISOString().split('T')[0]}.json`;
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    URL.revokeObjectURL(url);
+    
+    showNotification('📤 Data exported successfully!');
+  } catch (error) {
+    showNotification('❌ Error exporting data', true);
+  }
+}
+
+function importData(event) {
+  const file = event.target.files[0];
+  if (!file) return;
+  
+  const reader = new FileReader();
+  reader.onload = function(e) {
+    try {
+      const data = JSON.parse(e.target.result);
+      
+      if (!data.subjects) {
+        throw new Error('Invalid file format: No subjects found');
+      }
+      
+      let processedData = data;
+      if (!data.version || data.version === '1.0' || data.version === '2.0' || data.version === '3.0' || data.version === '4.0') {
+        processedData = convertOldFormatToNew(data);
+        showNotification('🔄 Converted old format to new format');
+      }
+      
+      subjects = processedData.subjects || [];
+      groups = processedData.groups || [];
+      groupAvailabilityData = processedData.groupAvailabilityData || {};
+      selectedSubjectsForAvailability = new Set(processedData.selectedSubjectsForAvailability || []);
+      myScheduleSelections = processedData.myScheduleSelections || {};
+      
+      subjects.forEach((subject, index) => {
+        if (typeof subject === 'string') {
+          const colorIndex = index % colorPalette.length;
+          subjects[index] = {
+            name: subject,
+            color: colorPalette[colorIndex],
+            selected: true
+          };
+        }
+      });
+      
+      groups.forEach(group => {
+        if (!group.classes) group.classes = [];
+        group.classes.forEach(cls => {
+          if (!cls.groupName) {
+            cls.groupName = group.name;
+          }
+        });
+      });
+      
+      event.target.value = '';
+      
+      renderSubjects();
+      updateClassSubjectDropdown();
+      updateGroupSelector();
+      renderPreferences();
+      updateSelectedCount();
+      updateSubjectSelectionView();
+      
+      if (processedData.preferences) {
+        setTimeout(() => loadPreferences(processedData.preferences), 100);
+      }
+      
+      if (currentEditingGroup) {
+        renderScheduleTable(currentEditingGroup);
+      }
+      
+      setTimeout(() => saveToBrowser(), 500);
+      
+      showNotification('📥 Data imported successfully!');
+    } catch (error) {
+      console.error('Import error:', error);
+      showNotification('❌ Error importing data. Invalid file format.', true);
+    }
+  };
+  reader.readAsText(file);
+}
+
+function resetAll() {
+  if (!confirm('⚠️ Are you sure you want to reset everything? This action cannot be undone.')) {
+    return;
+  }
+  
+  subjects = [];
+  groups = [];
+  currentEditingGroup = null;
+  allSchedules = [];
+  groupAvailabilityData = {};
+  selectedSubjectsForAvailability = new Set();
+  myScheduleSelections = {};
+  
+  localStorage.removeItem('universityScheduleData');
+  
+  renderSubjects();
+  updateClassSubjectDropdown();
+  updateGroupSelector();
+  renderPreferences();
+  updateSelectedCount();
+  updateSubjectSelectionView();
+  
+  document.getElementById('currentGroupInfo').style.display = 'none';
+  document.getElementById('groupScheduleEditor').style.display = 'none';
+  
+  document.getElementById('scheduleResults').innerHTML = '';
+  document.getElementById('results').innerHTML = '<div id="scheduleResults"></div>';
+  
+  document.getElementById('groupAvailabilityView').innerHTML = '';
+  document.getElementById('myScheduleResult').style.display = 'none';
+  document.getElementById('doctorScheduleResult').style.display = 'none';
+  
+  document.getElementById('subjectName').value = '';
+  document.getElementById('className').value = '';
+  
+  showNotification('🔄 All data has been reset');
+}
+
+function autoSave() {
+  if (localStorage.getItem('universityScheduleData')) {
+    saveToBrowser();
+  }
+}
+
+/******** SUBJECTS MANAGEMENT ********/
+function getSubjectColor(subjectName) {
+  const subject = subjects.find(s => s.name === subjectName);
+  if (subject && subject.color) {
+    return subject.color;
+  }
+  
+  const index = subjects.findIndex(s => s.name === subjectName) % colorPalette.length;
+  return colorPalette[index] || colorPalette[0];
+}
+
+function addSubject() {
+  const name = document.getElementById('subjectName').value.trim();
+  if (!name) {
+    alert("Please enter a subject name");
+    return;
+  }
+  if (subjects.some(s => s.name === name)) {
+    alert("Subject already exists");
+    return;
+  }
+  
+  const colorIndex = subjects.length % colorPalette.length;
+  const color = colorPalette[colorIndex];
+  
+  subjects.push({
+    name: name,
+    color: color,
+    selected: true
+  });
+  
+  document.getElementById('subjectName').value = '';
+  renderSubjects();
+  updateClassSubjectDropdown();
+  renderPreferences();
+  updateSelectedCount();
+  updateSubjectSelectionView();
+  autoSave();
+}
+
+function editSubject(subjectName) {
+  const subject = subjects.find(s => s.name === subjectName);
+  if (!subject) return;
+  
+  currentEditingSubject = subjectName;
+  const modal = document.getElementById('editSubjectModal');
+  const modalBody = document.getElementById('editSubjectBody');
+  
+  modalBody.innerHTML = `
+    <div style="margin-bottom: 20px;">
+      <label>Subject Name:</label>
+      <input type="text" id="editSubjectName" value="${subject.name}" 
+             style="width: 100%; padding: 8px; background: white; color: #2c3e50;">
+    </div>
+    
+    <div style="margin-bottom: 20px;">
+      <label>Choose Color:</label>
+      <div class="color-picker">
+        ${colorPalette.map((color, index) => `
+          <div class="color-option ${subject.color.name === color.name ? 'selected' : ''}" 
+               style="background: ${color.dark};" 
+               onclick="selectColorForSubject(${index})"
+               title="${color.name}"></div>
+        `).join('')}
+      </div>
+    </div>
+    
+    <div style="display: flex; gap: 10px; justify-content: flex-end;">
+      <button onclick="closeEditSubjectModal()" style="background: #95a5a6;">Cancel</button>
+      <button onclick="saveSubjectChanges()" style="background: #2ecc71;">Save Changes</button>
+    </div>
+  `;
+  
+  modal.style.display = 'block';
+}
+
+function selectColorForSubject(index) {
+  document.querySelectorAll('.color-option').forEach(opt => opt.classList.remove('selected'));
+  document.querySelectorAll('.color-option')[index].classList.add('selected');
+}
+
+function saveSubjectChanges() {
+  if (!currentEditingSubject) return;
+  
+  const newName = document.getElementById('editSubjectName').value.trim();
+  if (!newName) {
+    alert("Subject name cannot be empty");
+    return;
+  }
+  
+  if (newName !== currentEditingSubject && subjects.some(s => s.name === newName)) {
+    alert("Subject name already exists");
+    return;
+  }
+  
+  const selectedColorOption = document.querySelector('.color-option.selected');
+  const colorIndex = Array.from(document.querySelectorAll('.color-option')).indexOf(selectedColorOption);
+  const newColor = colorPalette[colorIndex] || colorPalette[0];
+  
+  const subjectIndex = subjects.findIndex(s => s.name === currentEditingSubject);
+  if (subjectIndex !== -1) {
+    groups.forEach(group => {
+      group.classes.forEach(cls => {
+        if (cls.subject === currentEditingSubject) {
+          cls.subject = newName;
+        }
+      });
+    });
+    
+    subjects[subjectIndex] = {
+      name: newName,
+      color: newColor,
+      selected: subjects[subjectIndex].selected
+    };
+    
+    if (selectedSubjectsForAvailability.has(currentEditingSubject)) {
+      selectedSubjectsForAvailability.delete(currentEditingSubject);
+      selectedSubjectsForAvailability.add(newName);
+    }
+    
+    const oldAvailability = groupAvailabilityData[currentEditingSubject];
+    if (oldAvailability) {
+      groupAvailabilityData[newName] = oldAvailability;
+      delete groupAvailabilityData[currentEditingSubject];
+    }
+    
+    // Update my schedule selections
+    if (myScheduleSelections[currentEditingSubject]) {
+      myScheduleSelections[newName] = myScheduleSelections[currentEditingSubject];
+      delete myScheduleSelections[currentEditingSubject];
+    }
+  }
+  
+  closeEditSubjectModal();
+  renderSubjects();
+  updateClassSubjectDropdown();
+  renderPreferences();
+  updateSelectedCount();
+  updateSubjectSelectionView();
+  if (currentEditingGroup) {
+    renderScheduleTable(currentEditingGroup);
+  }
+  autoSave();
+  showNotification('✅ Subject updated!');
+}
+
+function closeEditSubjectModal() {
+  document.getElementById('editSubjectModal').style.display = 'none';
+  currentEditingSubject = null;
+}
+
+function removeSubject(subjectName) {
+  if (!confirm(`Remove subject "${subjectName}"? This will also remove all classes for this subject.`)) return;
+  
+  subjects = subjects.filter(s => s.name !== subjectName);
+  groups.forEach(g => {
+    g.classes = g.classes.filter(c => c.subject !== subjectName);
+  });
+  
+  selectedSubjectsForAvailability.delete(subjectName);
+  delete groupAvailabilityData[subjectName];
+  delete myScheduleSelections[subjectName];
+  
+  renderSubjects();
+  updateClassSubjectDropdown();
+  renderPreferences();
+  updateSelectedCount();
+  updateSubjectSelectionView();
+  if (currentEditingGroup) {
+    renderScheduleTable(currentEditingGroup);
+  }
+  autoSave();
+}
+
+function renderSubjects() {
+  const container = document.getElementById('subjectList');
+  container.innerHTML = '';
+  
+  if (subjects.length === 0) {
+    container.innerHTML = '<p style="color:#666; text-align:center; padding:20px;">No subjects added yet.</p>';
+    return;
+  }
+  
+  subjects.forEach(subject => {
+    const color = subject.color;
+    const div = document.createElement('div');
+    div.className = 'subject-item';
+    div.style.background = color.light;
+    div.style.borderLeftColor = color.dark;
+    div.innerHTML = `
+      <span style="font-weight:600; color:${color.dark};">${subject.name}</span>
+      <div>
+        <button class="edit-btn" onclick="editSubject('${subject.name}')">✏️ Edit</button>
+        <button class="remove-btn" onclick="removeSubject('${subject.name}')">Remove</button>
+      </div>
+    `;
+    container.appendChild(div);
+  });
+}
+
+/******** GROUPS MANAGEMENT ********/
+function addGroup() {
+  const groupId = groups.length + 1;
+  const groupName = `Group ${groupId}`;
+  
+  groups.push({
+    id: groupId,
+    name: groupName,
+    classes: []
+  });
+  
+  updateGroupSelector();
+  selectGroup(groups.length - 1);
+  autoSave();
+}
+
+function updateGroupSelector() {
+  const selector = document.getElementById('groupSelector');
+  selector.innerHTML = '<option value="">Select Group to Edit</option>';
+  
+  groups.forEach((g, i) => {
+    selector.innerHTML += `<option value="${i}">${g.name}</option>`;
+  });
+}
+
+function selectGroup(index) {
+  if (index === "") {
+    document.getElementById('currentGroupInfo').style.display = 'none';
+    document.getElementById('groupScheduleEditor').style.display = 'none';
+    currentEditingGroup = null;
+    return;
+  }
+  
+  currentEditingGroup = groups[index];
+  document.getElementById('currentGroupInfo').style.display = 'block';
+  document.getElementById('groupScheduleEditor').style.display = 'block';
+  document.getElementById('groupNameDisplay').textContent = currentEditingGroup.name;
+  
+  renderScheduleTable(currentEditingGroup);
+}
+
+function openEditGroupModal() {
+  if (!currentEditingGroup) return;
+  
+  currentEditingGroupIndex = groups.indexOf(currentEditingGroup);
+  const modal = document.getElementById('editGroupModal');
+  const modalBody = document.getElementById('editGroupBody');
+  
+  modalBody.innerHTML = `
+    <div style="margin-bottom: 20px;">
+      <label>Group Name:</label>
+      <input type="text" id="editGroupName" value="${currentEditingGroup.name}" 
+             style="width: 100%; padding: 8px; background: white; color: #2c3e50;">
+    </div>
+    
+    <div style="margin-bottom: 20px; color: #e74c3c; font-size: 14px;">
+      <strong>Warning:</strong> Changing the group name will update all classes in this group.
+    </div>
+    
+    <div style="display: flex; gap: 10px; justify-content: flex-end;">
+      <button onclick="closeEditGroupModal()" style="background: #95a5a6;">Cancel</button>
+      <button onclick="saveGroupChanges()" style="background: #2ecc71;">Save Changes</button>
+    </div>
+  `;
+  
+  modal.style.display = 'block';
+}
+
+function saveGroupChanges() {
+  if (currentEditingGroupIndex === null || !currentEditingGroup) return;
+  
+  const newName = document.getElementById('editGroupName').value.trim();
+  if (!newName) {
+    alert("Group name cannot be empty");
+    return;
+  }
+  
+  if (newName !== currentEditingGroup.name && groups.some(g => g.name === newName)) {
+    alert("Group name already exists");
+    return;
+  }
+  
+  const oldName = currentEditingGroup.name;
+  currentEditingGroup.name = newName;
+  
+  currentEditingGroup.classes.forEach(cls => {
+    cls.groupName = newName;
+  });
+  
+  // Update group availability data
+  for (const subjectName in groupAvailabilityData) {
+    if (groupAvailabilityData[subjectName][oldName] !== undefined) {
+      groupAvailabilityData[subjectName][newName] = groupAvailabilityData[subjectName][oldName];
+      delete groupAvailabilityData[subjectName][oldName];
+    }
+  }
+  
+  // Update my schedule selections
+  for (const subjectName in myScheduleSelections) {
+    if (myScheduleSelections[subjectName].lectureGroup === oldName) {
+      myScheduleSelections[subjectName].lectureGroup = newName;
+    }
+    if (myScheduleSelections[subjectName].sectionGroup === oldName) {
+      myScheduleSelections[subjectName].sectionGroup = newName;
+    }
+    if (myScheduleSelections[subjectName].labGroup === oldName) {
+      myScheduleSelections[subjectName].labGroup = newName;
+    }
+  }
+  
+  closeEditGroupModal();
+  updateGroupSelector();
+  document.getElementById('groupNameDisplay').textContent = newName;
+  if (currentEditingGroup) {
+    renderScheduleTable(currentEditingGroup);
+  }
+  autoSave();
+  showNotification('✅ Group updated!');
+}
+
+function closeEditGroupModal() {
+  document.getElementById('editGroupModal').style.display = 'none';
+  currentEditingGroupIndex = null;
+}
+
+function deleteCurrentGroup() {
+  if (!currentEditingGroup) return;
+  
+  if (!confirm(`Delete group "${currentEditingGroup.name}"? This will remove all classes in this group.`)) {
+    return;
+  }
+  
+  const groupIndex = groups.indexOf(currentEditingGroup);
+  groups.splice(groupIndex, 1);
+  
+  // Remove group from availability data
+  for (const subjectName in groupAvailabilityData) {
+    delete groupAvailabilityData[subjectName][currentEditingGroup.name];
+  }
+  
+  // Remove group from my schedule selections
+  for (const subjectName in myScheduleSelections) {
+    if (myScheduleSelections[subjectName].lectureGroup === currentEditingGroup.name) {
+      myScheduleSelections[subjectName].lectureGroup = null;
+    }
+    if (myScheduleSelections[subjectName].sectionGroup === currentEditingGroup.name) {
+      myScheduleSelections[subjectName].sectionGroup = null;
+    }
+    if (myScheduleSelections[subjectName].labGroup === currentEditingGroup.name) {
+      myScheduleSelections[subjectName].labGroup = null;
+    }
+  }
+  
+  currentEditingGroup = null;
+  updateGroupSelector();
+  document.getElementById('currentGroupInfo').style.display = 'none';
+  document.getElementById('groupScheduleEditor').style.display = 'none';
+  renderPreferences();
+  updateSelectedCount();
+  updateSubjectSelectionView();
+  autoSave();
+  showNotification('✅ Group deleted!');
+}
+
+function updateClassSubjectDropdown() {
+  const dropdown = document.getElementById('classSubject');
+  dropdown.innerHTML = '<option value="">Select Subject</option>';
+  
+  subjects.forEach(s => {
+    dropdown.innerHTML += `<option value="${s.name}">${s.name}</option>`;
+  });
+}
+
+function addClassToGroup() {
+  if (!currentEditingGroup) {
+    alert("Please select a group first");
+    return;
+  }
+  
+  const subject = document.getElementById('classSubject').value;
+  const type = document.getElementById('classType').value;
+  let name = document.getElementById('className').value.trim();
+  const day = document.getElementById('classDay').value;
+  const timeSlot = parseInt(document.getElementById('classTime').value);
+  
+  if (!subject) {
+    alert("Please select a subject");
+    return;
+  }
+  
+  const timeData = lectureTimes[timeSlot];
+  const startTime = timeData.start * 60;
+  const endTime = timeData.end * 60;
+  
+  const conflict = currentEditingGroup.classes.find(c => 
+    c.day === day && 
+    c.timeSlot === timeSlot
+  );
+  
+  if (conflict) {
+    if (!confirm(`There's already a class in this time slot. Replace it?`)) return;
+    currentEditingGroup.classes = currentEditingGroup.classes.filter(c => 
+      !(c.day === day && c.timeSlot === timeSlot)
+    );
+  }
+  
+  currentEditingGroup.classes.push({
+    subject,
+    type,
+    name: name || '',
+    day,
+    timeSlot,
+    start: startTime,
+    end: endTime,
+    groupName: currentEditingGroup.name
+  });
+  
+  document.getElementById('className').value = '';
+  
+  renderScheduleTable(currentEditingGroup);
+  renderPreferences();
+  updateSelectedCount();
+  updateSubjectSelectionView();
+  autoSave();
+}
+
+function removeClassFromGroup(day, timeSlot) {
+  if (!currentEditingGroup) return;
+  
+  currentEditingGroup.classes = currentEditingGroup.classes.filter(c => 
+    !(c.day === day && c.timeSlot === timeSlot)
+  );
+  
+  renderScheduleTable(currentEditingGroup);
+  renderPreferences();
+  updateSelectedCount();
+  updateSubjectSelectionView();
+  autoSave();
+}
+
+function openEditModal(day, timeSlot) {
+  if (!currentEditingGroup) return;
+  
+  const classItem = currentEditingGroup.classes.find(c => 
+    c.day === day && c.timeSlot === timeSlot
+  );
+  
+  if (!classItem) return;
+  
+  currentEditingClass = { day, timeSlot, groupIndex: groups.indexOf(currentEditingGroup) };
+  
+  const modal = document.getElementById('editInstructorModal');
+  const modalBody = document.getElementById('modalBody');
+  
+  modalBody.innerHTML = `
+    <div style="margin-bottom: 20px;">
+      <div><strong>Subject:</strong> ${classItem.subject}</div>
+      <div><strong>Type:</strong> ${classItem.type}</div>
+      <div><strong>Day:</strong> ${classItem.day}</div>
+      <div><strong>Time:</strong> ${lectureTimes[classItem.timeSlot].timeStr}</div>
+      <div><strong>Group:</strong> ${currentEditingGroup.name}</div>
+    </div>
+    
+    <div style="margin-bottom: 20px;">
+      <label>Instructor Name:</label>
+      <input type="text" id="editInstructorName" value="${classItem.name || ''}" 
+             placeholder="Enter name" style="width: 100%; padding: 8px; background: white; color: #2c3e50;">
+    </div>
+    
+    <div style="display: flex; gap: 10px; justify-content: flex-end;">
+      <button onclick="closeEditModal()" style="background: #95a5a6;">Cancel</button>
+      <button onclick="saveInstructorName()" style="background: #2ecc71;">Save</button>
+    </div>
+  `;
+  
+  modal.style.display = 'block';
+}
+
+function closeEditModal() {
+  document.getElementById('editInstructorModal').style.display = 'none';
+  currentEditingClass = null;
+}
+
+function saveInstructorName() {
+  if (!currentEditingClass) return;
+  
+  const newName = document.getElementById('editInstructorName').value.trim();
+  const { day, timeSlot, groupIndex } = currentEditingClass;
+  
+  if (groupIndex >= 0 && groupIndex < groups.length) {
+    const group = groups[groupIndex];
+    const classItem = group.classes.find(c => 
+      c.day === day && c.timeSlot === timeSlot
+    );
+    
+    if (classItem) {
+      classItem.name = newName;
+      
+      if (currentEditingGroup && currentEditingGroup.id === group.id) {
+        renderScheduleTable(currentEditingGroup);
+      }
+      
+      renderPreferences();
+      updateSelectedCount();
+      updateSubjectSelectionView();
+      autoSave();
+      closeEditModal();
+      showNotification('✅ Instructor name updated!');
+    }
+  }
+}
+
+function renderScheduleTable(group) {
+  const tbody = document.getElementById('scheduleGrid');
+  tbody.innerHTML = '';
+  
+  days.forEach(day => {
+    const row = document.createElement('tr');
+    
+    const dayCell = document.createElement('td');
+    dayCell.className = 'day-header';
+    dayCell.textContent = day;
+    dayCell.style.fontWeight = '600';
+    row.appendChild(dayCell);
+    
+    for (let timeIndex = 0; timeIndex < 6; timeIndex++) {
+      const cell = document.createElement('td');
+      cell.className = 'empty-cell';
+      
+      const classItem = group.classes.find(c => 
+        c.day === day && c.timeSlot === timeIndex
+      );
+      
+      if (classItem) {
+        const subjectData = subjects.find(s => s.name === classItem.subject);
+        const color = subjectData ? subjectData.color : colorPalette[0];
+        
+        const hasInstructor = classItem.name && classItem.name.trim() !== '';
+        
+        const classBox = document.createElement('div');
+        classBox.className = 'class-box';
+        classBox.style.background = color.light;
+        classBox.style.borderLeft = `3px solid ${color.dark}`;
+        classBox.innerHTML = `
+          <div class="class-subject" style="background:${color.dark}; color:white;">${classItem.subject}</div>
+          ${hasInstructor ? 
+            `<div class="class-doctor" style="color:${color.dark};">${classItem.name}</div>` : 
+            `<div class="no-instructor">Instructor not assigned</div>`
+          }
+          <div class="class-type" style="background:${color.dark}; color:white;">${classItem.type}</div>
+          <button class="edit-class-btn" onclick="event.stopPropagation(); openEditModal('${day}', ${timeIndex})">
+            ✏️ Edit
+          </button>
+          <button class="remove-btn" onclick="removeClassFromGroup('${day}', ${timeIndex})" 
+                  style="position:absolute; top:5px; right:5px; padding:2px 6px; font-size:10px;">✕</button>
+        `;
+        cell.appendChild(classBox);
+      }
+      
+      row.appendChild(cell);
+    }
+    
+    tbody.appendChild(row);
+  });
+}
+
+/******** PREFERENCES ********/
+function renderPreferences() {
+  const div = document.getElementById('preferences');
+  div.innerHTML = '';
+  
+  if (subjects.length === 0) {
+    div.innerHTML = '<p style="color:#666; text-align:center; padding:20px;">Add subjects first to set preferences.</p>';
+    return;
+  }
+  
+  subjects.forEach(subject => {
+    const lectureNames = new Set();
+    const sectionNames = new Set();
+    const labNames = new Set();
+    
+    groups.forEach(g => {
+      g.classes.filter(c => c.subject === subject.name && c.name && c.name.trim() !== '').forEach(c => {
+        if (c.type === 'Lecture') {
+          lectureNames.add(c.name);
+        } else if (c.type === 'Section') {
+          sectionNames.add(c.name);
+        } else if (c.type === 'Lab') {
+          labNames.add(c.name);
+        }
+      });
+    });
+    
+    const color = subject.color;
+    
+    const prefBox = document.createElement('div');
+    prefBox.className = 'preference-box';
+    prefBox.style.borderLeft = `4px solid ${color.dark}`;
+    prefBox.style.background = color.light;
+    prefBox.innerHTML = `
+      <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px;">
+        <h4 style="margin: 0; color:${color.dark};">
+          ${subject.name}
+        </h4>
+        <div>
+          <input type="checkbox" id="check_${subject.name}" class="subject-checkbox" 
+                 ${subject.selected !== false ? 'checked' : ''} 
+                 onchange="updateSubjectSelection('${subject.name}')">
+          <label for="check_${subject.name}" style="font-size: 12px; color: #7f8c8d; margin-left: 5px;">
+            Include in schedule
+          </label>
+        </div>
+      </div>
+      <div class="pref-type-container">
+        <div class="pref-type">
+          <label>Preferred Lecture Doctor:</label>
+          <select id="pref_${subject.name}_Lecture" style="width:100%" onchange="autoSave()">
+            <option value="Any">Any doctor</option>
+            ${Array.from(lectureNames).map(n => `<option value="${n}">Dr. ${n}</option>`).join('')}
+          </select>
+          <div style="font-size:11px; color:#7f8c8d; margin-top:5px;">
+            ${lectureNames.size} doctor${lectureNames.size !== 1 ? 's' : ''} available
+          </div>
+        </div>
+        <div class="pref-type">
+          <label>Preferred Section TA:</label>
+          <select id="pref_${subject.name}_Section" style="width:100%" onchange="autoSave()">
+            <option value="Any">Any TA</option>
+            ${Array.from(sectionNames).map(n => `<option value="${n}">TA ${n}</option>`).join('')}
+          </select>
+          <div style="font-size:11px; color:#7f8c8d; margin-top:5px;">
+            ${sectionNames.size} TA${sectionNames.size !== 1 ? 's' : ''} available
+          </div>
+        </div>
+        <div class="pref-type">
+          <label>Preferred Lab TA:</label>
+          <select id="pref_${subject.name}_Lab" style="width:100%" onchange="autoSave()">
+            <option value="Any">Any TA</option>
+            ${Array.from(labNames).map(n => `<option value="${n}">TA ${n}</option>`).join('')}
+          </select>
+          <div style="font-size:11px; color:#7f8c8d; margin-top:5px;">
+            ${labNames.size} TA${labNames.size !== 1 ? 's' : ''} available
+          </div>
+        </div>
+      </div>
+    `;
+    div.appendChild(prefBox);
+  });
+}
+
+function updateSubjectSelection(subjectName) {
+  const checkbox = document.getElementById(`check_${subjectName}`);
+  const subject = subjects.find(s => s.name === subjectName);
+  if (subject) {
+    subject.selected = checkbox.checked;
+    updateSelectedCount();
+    autoSave();
+  }
+}
+
+function updateSelectedCount() {
+  const selectedCount = subjects.filter(s => s.selected !== false).length;
+  const totalCount = subjects.length;
+  document.getElementById('selectedSubjectsCount').textContent = 
+    `${selectedCount} of ${totalCount} subjects selected`;
+}
+
+/******** GROUP AVAILABILITY TAB ********/
+function updateSubjectSelectionView() {
+  const container = document.getElementById('subjectSelection');
+  container.innerHTML = '';
+  
+  if (subjects.length === 0) {
+    container.innerHTML = '<p style="color:#666; text-align:center; padding:20px;">No subjects added yet. Add subjects in the Subjects tab first.</p>';
+    return;
+  }
+  
+  subjects.forEach(subject => {
+    const isSelected = selectedSubjectsForAvailability.has(subject.name);
+    const color = subject.color;
+    
+    const chip = document.createElement('div');
+    chip.className = `subject-chip ${isSelected ? 'selected' : ''}`;
+    chip.style.background = isSelected ? color.dark : color.light;
+    chip.style.color = isSelected ? 'white' : color.dark;
+    chip.style.borderColor = color.dark;
+    
+    chip.innerHTML = `
+      <input type="checkbox" class="subject-chip-checkbox" ${isSelected ? 'checked' : ''} 
+             onchange="toggleSubjectForAvailability('${subject.name}', this.checked)">
+      <span>${subject.name}</span>
+      ${isSelected ? '<span style="font-size: 12px;">✓</span>' : ''}
+    `;
+    
+    chip.onclick = function(e) {
+      if (!e.target.classList.contains('subject-chip-checkbox')) {
+        const checkbox = this.querySelector('.subject-chip-checkbox');
+        checkbox.checked = !checkbox.checked;
+        toggleSubjectForAvailability(subject.name, checkbox.checked);
+      }
+    };
+    
+    container.appendChild(chip);
+  });
+}
+
+function toggleSubjectForAvailability(subjectName, isSelected) {
+  if (isSelected) {
+    selectedSubjectsForAvailability.add(subjectName);
+  } else {
+    selectedSubjectsForAvailability.delete(subjectName);
+  }
+  
+  updateSubjectSelectionView();
+  autoSave();
+}
+
+function generateGroupAvailabilityView() {
+  if (selectedSubjectsForAvailability.size === 0) {
+    alert("Please select at least one subject to view group availability.");
+    return;
+  }
+  
+  renderGroupAvailabilityView();
+}
+
+function renderGroupAvailabilityView() {
+  const container = document.getElementById('groupAvailabilityView');
+  container.innerHTML = '';
+  
+  if (selectedSubjectsForAvailability.size === 0) {
+    container.innerHTML = `
+      <div class="box" style="text-align:center; padding:30px;">
+        <h3 style="color:#e74c3c;">No Subjects Selected</h3>
+        <p>Please select subjects above to view group availability.</p>
+      </div>
+    `;
+    return;
+  }
+  
+  // Show summary
+  const summary = document.createElement('div');
+  summary.className = 'box';
+  summary.style.background = 'linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%)';
+  
+  let totalGroups = 0;
+  let availableGroups = 0;
+  
+  Array.from(selectedSubjectsForAvailability).forEach(subjectName => {
+    const groupsForSubject = getGroupsForSubject(subjectName);
+    totalGroups += groupsForSubject.length;
+    
+    groupsForSubject.forEach(group => {
+      if (isGroupAvailableForSubject(subjectName, group.name)) {
+        availableGroups++;
+      }
+    });
+  });
+  
+  summary.innerHTML = `
+    <h3 style="margin-top: 0; color: #2c3e50;">📊 Group Availability Overview</h3>
+    <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 15px; margin-top: 15px;">
+      <div style="text-align: center; padding: 15px; background: white; border-radius: 6px;">
+        <div style="font-size: 24px; color: #3498db; font-weight: bold;">${totalGroups}</div>
+        <div style="color: #7f8c8d; font-size: 14px;">Total Groups</div>
+      </div>
+      <div style="text-align: center; padding: 15px; background: white; border-radius: 6px;">
+        <div style="font-size: 24px; color: #27ae60; font-weight: bold;">${availableGroups}</div>
+        <div style="color: #7f8c8d; font-size: 14px;">Available Groups</div>
+      </div>
+      <div style="text-align: center; padding: 15px; background: white; border-radius: 6px;">
+        <div style="font-size: 24px; color: #9b59b6; font-weight: bold;">${Array.from(selectedSubjectsForAvailability).length}</div>
+        <div style="color: #7f8c8d; font-size: 14px;">Selected Subjects</div>
+      </div>
+    </div>
+    <p style="margin-top: 15px; color: #2c3e50; font-size: 14px;">
+      Check the boxes below to mark groups as available for registration. Unchecked groups are already full.
+    </p>
+  `;
+  container.appendChild(summary);
+  
+  // Show each selected subject with its groups
+  Array.from(selectedSubjectsForAvailability).forEach(subjectName => {
+    const subject = subjects.find(s => s.name === subjectName);
+    if (!subject) return;
+    
+    const color = subject.color;
+    
+    const subjectSection = document.createElement('div');
+    subjectSection.className = 'availability-subject';
+    subjectSection.style.borderColor = color.dark;
+    
+    // Get groups that have this subject
+    const groupsForSubject = getGroupsForSubject(subjectName);
+    
+    let availableCount = 0;
+    groupsForSubject.forEach(group => {
+      if (isGroupAvailableForSubject(subjectName, group.name)) {
+        availableCount++;
+      }
+    });
+    
+    subjectSection.innerHTML = `
+      <div class="availability-subject-header">
+        <h3>
+          <span style="color: ${color.dark};">${subjectName}</span>
+          <span class="group-count">${groupsForSubject.length} groups</span>
+        </h3>
+        <div>
+          <span class="availability-status ${availableCount > 0 ? 'available' : 'unavailable'}">
+            ${availableCount} available
+          </span>
+        </div>
+      </div>
+      <div class="availability-groups" id="groups-${subjectName}">
+        <!-- Groups will be added here -->
+      </div>
+    `;
+    
+    container.appendChild(subjectSection);
+    
+    // Add groups for this subject
+    const groupsContainer = document.getElementById(`groups-${subjectName}`);
+    
+    groupsForSubject.forEach(group => {
+      const isAvailable = isGroupAvailableForSubject(subjectName, group.name);
+      
+      // Get instructors for this subject in this group
+      const lectureClasses = group.classes.filter(c => c.subject === subjectName && c.type === 'Lecture');
+      const sectionClasses = group.classes.filter(c => c.subject === subjectName && c.type === 'Section');
+      const labClasses = group.classes.filter(c => c.subject === subjectName && c.type === 'Lab');
+      
+      const lectureInstructor = lectureClasses.length > 0 ? lectureClasses[0].name : '';
+      const sectionInstructor = sectionClasses.length > 0 ? sectionClasses[0].name : '';
+      const labInstructor = labClasses.length > 0 ? labClasses[0].name : '';
+      
+      // Get schedule days for this subject in this group
+      const classDays = new Set();
+      group.classes.filter(c => c.subject === subjectName).forEach(cls => {
+        classDays.add(cls.day);
+      });
+      const daysList = Array.from(classDays);
+      
+      const groupCard = document.createElement('div');
+      groupCard.className = 'group-card';
+      groupCard.style.borderLeft = `4px solid ${isAvailable ? '#27ae60' : '#e74c3c'}`;
+      
+      groupCard.innerHTML = `
+        <div class="group-card-header">
+          <div class="group-card-title">${group.name}</div>
+          <span class="availability-status ${isAvailable ? 'available' : 'unavailable'}">
+            ${isAvailable ? 'Available' : 'Full'}
+          </span>
+        </div>
+        
+        <div class="instructor-row">
+          <span class="instructor-type">Lecture:</span>
+          <span class="instructor-name ${!lectureInstructor ? 'no-instructor-name' : ''}">
+            ${lectureInstructor || 'Not assigned'}
+          </span>
+        </div>
+        
+        <div class="instructor-row">
+          <span class="instructor-type">Section:</span>
+          <span class="instructor-name ${!sectionInstructor ? 'no-instructor-name' : ''}">
+            ${sectionInstructor || 'Not assigned'}
+          </span>
+        </div>
+        
+        <div class="instructor-row">
+          <span class="instructor-type">Lab:</span>
+          <span class="instructor-name ${!labInstructor ? 'no-instructor-name' : ''}">
+            ${labInstructor || 'Not assigned'}
+          </span>
+        </div>
+        
+        ${daysList.length > 0 ? `
+          <div class="group-schedule-info">
+            <strong>Schedule:</strong> 
+            ${daysList.map(day => `<span class="schedule-day">${day.substring(0, 3)}</span>`).join('')}
+          </div>
+        ` : ''}
+        
+        <div class="availability-checkbox">
+          <input type="checkbox" id="group-avail-${subjectName}-${group.name}" 
+                 ${isAvailable ? 'checked' : ''}
+                 onchange="updateGroupAvailability('${subjectName}', '${group.name}', this.checked)">
+          <label for="group-avail-${subjectName}-${group.name}">
+            This group is available for registration
+          </label>
+        </div>
+      `;
+      
+      groupsContainer.appendChild(groupCard);
+    });
+  });
+  
+  autoSave();
+}
+
+function getGroupsForSubject(subjectName) {
+  return groups.filter(group => 
+    group.classes.some(cls => cls.subject === subjectName)
+  );
+}
+
+function isGroupAvailableForSubject(subjectName, groupName) {
+  if (!groupAvailabilityData[subjectName]) {
+    // If no availability data exists for this subject, assume all groups are available
+    return true;
+  }
+  
+  if (groupAvailabilityData[subjectName][groupName] === undefined) {
+    // If this specific group doesn't have availability data, assume it's available
+    return true;
+  }
+  
+  return groupAvailabilityData[subjectName][groupName];
+}
+
+function updateGroupAvailability(subjectName, groupName, isAvailable) {
+  if (!groupAvailabilityData[subjectName]) {
+    groupAvailabilityData[subjectName] = {};
+  }
+  
+  groupAvailabilityData[subjectName][groupName] = isAvailable;
+  
+  autoSave();
+  
+  // Update the status badge
+  const badge = document.querySelector(`#group-avail-${subjectName}-${groupName}`).closest('.group-card').querySelector('.availability-status');
+  badge.textContent = isAvailable ? 'Available' : 'Full';
+  badge.className = `availability-status ${isAvailable ? 'available' : 'unavailable'}`;
+  
+  // Update the border color
+  const card = document.querySelector(`#group-avail-${subjectName}-${groupName}`).closest('.group-card');
+  card.style.borderLeft = `4px solid ${isAvailable ? '#27ae60' : '#e74c3c'}`;
+  
+  // Update available count for the subject
+  const subjectHeader = document.querySelector(`#groups-${subjectName}`).closest('.availability-subject').querySelector('.availability-subject-header');
+  const subjectGroups = document.querySelectorAll(`#groups-${subjectName} .group-card`);
+  let availableCount = 0;
+  subjectGroups.forEach(card => {
+    if (card.querySelector('.availability-status').textContent === 'Available') {
+      availableCount++;
+    }
+  });
+  
+  const countBadge = subjectHeader.querySelector('.availability-status');
+  countBadge.textContent = `${availableCount} available`;
+  countBadge.className = `availability-status ${availableCount > 0 ? 'available' : 'unavailable'}`;
+}
+
+function showOnlyAvailableGroups() {
+  const allGroupCards = document.querySelectorAll('.group-card');
+  allGroupCards.forEach(card => {
+    const isAvailable = card.querySelector('.availability-status').textContent === 'Available';
+    card.style.display = isAvailable ? 'block' : 'none';
+  });
+  
+  showNotification('👁️ Showing only available groups');
+}
+
+function showAllGroups() {
+  const allGroupCards = document.querySelectorAll('.group-card');
+  allGroupCards.forEach(card => {
+    card.style.display = 'block';
+  });
+  
+  showNotification('👁️ Showing all groups');
+}
+
+function clearAllGroupAvailability() {
+  if (!confirm('Are you sure you want to mark ALL groups as unavailable (full)?')) {
+    return;
+  }
+  
+  for (const subjectName in groupAvailabilityData) {
+    for (const groupName in groupAvailabilityData[subjectName]) {
+      groupAvailabilityData[subjectName][groupName] = false;
+    }
+  }
+  
+  // Also mark all groups for selected subjects as unavailable
+  Array.from(selectedSubjectsForAvailability).forEach(subjectName => {
+    if (!groupAvailabilityData[subjectName]) {
+      groupAvailabilityData[subjectName] = {};
+    }
+    
+    const groupsForSubject = getGroupsForSubject(subjectName);
+    groupsForSubject.forEach(group => {
+      groupAvailabilityData[subjectName][group.name] = false;
+    });
+  });
+  
+  renderGroupAvailabilityView();
+  showNotification('🗑️ All groups marked as full');
+}
+
+function applyGroupAvailabilityToAll() {
+  if (!confirm('Apply the same availability status to all subjects for each group?')) {
+    return;
+  }
+  
+  // For each group, check if it's available in any subject
+  groups.forEach(group => {
+    let isAvailableInAny = false;
+    
+    Array.from(selectedSubjectsForAvailability).forEach(subjectName => {
+      if (group.classes.some(c => c.subject === subjectName)) {
+        if (groupAvailabilityData[subjectName] && groupAvailabilityData[subjectName][group.name]) {
+          isAvailableInAny = true;
+        }
+      }
+    });
+    
+    // Apply to all subjects
+    Array.from(selectedSubjectsForAvailability).forEach(subjectName => {
+      if (group.classes.some(c => c.subject === subjectName)) {
+        if (!groupAvailabilityData[subjectName]) {
+          groupAvailabilityData[subjectName] = {};
+        }
+        groupAvailabilityData[subjectName][group.name] = isAvailableInAny;
+      }
+    });
+  });
+  
+  renderGroupAvailabilityView();
+  showNotification('🔄 Applied availability to all subjects');
+}
+
+/******** MY CUSTOM SCHEDULE (TAB 6) ********/
+function renderCustomSchedulePicker() {
+  const container = document.getElementById('customSchedulePicker');
+  container.innerHTML = '';
+  
+  if (subjects.length === 0) {
+    container.innerHTML = '<p style="color:#666; text-align:center; padding:20px;">No subjects added yet. Add subjects in the Subjects tab first.</p>';
+    return;
+  }
+  
+  // Filter subjects that are selected in Tab 3
+  const selectedSubjects = subjects.filter(s => s.selected !== false);
+  
+  if (selectedSubjects.length === 0) {
+    container.innerHTML = '<p style="color:#666; text-align:center; padding:20px;">No subjects selected. Please check subjects in the Preferences tab.</p>';
+    return;
+  }
+  
+  selectedSubjects.forEach(subject => {
+    const color = subject.color;
+    const subjectDiv = document.createElement('div');
+    subjectDiv.className = 'subject-picker-item';
+    subjectDiv.style.borderLeftColor = color.dark;
+    
+    // Get available groups for this subject (all groups, not just available - user can pick any)
+    const groupsForSubject = getGroupsForSubject(subject.name);
+    
+    // Prepare dropdown options
+    let lectureOptions = `<option value="">-- Select Lecture Group --</option>`;
+    let sectionOptions = `<option value="">-- Select Section Group --</option>`;
+    let labOptions = `<option value="">-- Select Lab Group --</option>`;
+    
+    groupsForSubject.forEach(group => {
+      const hasLecture = group.classes.some(c => c.subject === subject.name && c.type === 'Lecture');
+      const hasSection = group.classes.some(c => c.subject === subject.name && c.type === 'Section');
+      const hasLab = group.classes.some(c => c.subject === subject.name && c.type === 'Lab');
+      
+      if (hasLecture) {
+        const instructor = group.classes.find(c => c.subject === subject.name && c.type === 'Lecture')?.name || 'No instructor';
+        lectureOptions += `<option value="${group.name}">${group.name} (Dr. ${instructor})</option>`;
+      }
+      if (hasSection) {
+        const instructor = group.classes.find(c => c.subject === subject.name && c.type === 'Section')?.name || 'No instructor';
+        sectionOptions += `<option value="${group.name}">${group.name} (TA ${instructor})</option>`;
+      }
+      if (hasLab) {
+        const instructor = group.classes.find(c => c.subject === subject.name && c.type === 'Lab')?.name || 'No instructor';
+        labOptions += `<option value="${group.name}">${group.name} (TA ${instructor})</option>`;
+      }
+    });
+    
+    // Get saved selections
+    const saved = myScheduleSelections[subject.name] || { lectureGroup: null, sectionGroup: null, labGroup: null };
+    
+    subjectDiv.innerHTML = `
+      <div style="font-weight: 600; color: ${color.dark};">${subject.name}</div>
+      <div>
+        <label style="font-size: 12px;">📘 Lecture Group</label>
+        <select id="lecture-${subject.name}" onchange="updateMyScheduleSelection('${subject.name}', 'lecture', this.value)">
+          ${lectureOptions}
+        </select>
+      </div>
+      <div>
+        <label style="font-size: 12px;">📝 Section Group</label>
+        <select id="section-${subject.name}" onchange="updateMyScheduleSelection('${subject.name}', 'section', this.value)">
+          ${sectionOptions}
+        </select>
+      </div>
+      <div>
+        <label style="font-size: 12px;">🔬 Lab Group</label>
+        <select id="lab-${subject.name}" onchange="updateMyScheduleSelection('${subject.name}', 'lab', this.value)">
+          ${labOptions}
+        </select>
+      </div>
+    `;
+    
+    container.appendChild(subjectDiv);
+    
+    // Set saved values after element is in DOM
+    setTimeout(() => {
+      if (saved.lectureGroup) {
+        const select = document.getElementById(`lecture-${subject.name}`);
+        if (select) select.value = saved.lectureGroup;
+      }
+      if (saved.sectionGroup) {
+        const select = document.getElementById(`section-${subject.name}`);
+        if (select) select.value = saved.sectionGroup;
+      }
+      if (saved.labGroup) {
+        const select = document.getElementById(`lab-${subject.name}`);
+        if (select) select.value = saved.labGroup;
+      }
+    }, 0);
+  });
+}
+
+function updateMyScheduleSelection(subjectName, type, groupName) {
+  if (!myScheduleSelections[subjectName]) {
+    myScheduleSelections[subjectName] = { lectureGroup: null, sectionGroup: null, labGroup: null };
+  }
+  
+  if (type === 'lecture') {
+    myScheduleSelections[subjectName].lectureGroup = groupName || null;
+  } else if (type === 'section') {
+    myScheduleSelections[subjectName].sectionGroup = groupName || null;
+  } else if (type === 'lab') {
+    myScheduleSelections[subjectName].labGroup = groupName || null;
+  }
+  
+  autoSave();
+}
+
+function clearMyCustomSchedule() {
+  if (!confirm('Clear all your custom schedule selections?')) return;
+  
+  myScheduleSelections = {};
+  renderCustomSchedulePicker();
+  document.getElementById('myScheduleResult').style.display = 'none';
+  autoSave();
+  showNotification('✅ Custom schedule cleared');
+}
+
+function renderMyCustomSchedule() {
+  const selectedSubjects = subjects.filter(s => s.selected !== false);
+  
+  if (selectedSubjects.length === 0) {
+    alert('Please select subjects in the Preferences tab first.');
+    return;
+  }
+  
+  // Collect all selected classes
+  const classes = [];
+  
+  selectedSubjects.forEach(subject => {
+    const selections = myScheduleSelections[subject.name];
+    if (!selections) return;
+    
+    // Add lecture
+    if (selections.lectureGroup) {
+      const group = groups.find(g => g.name === selections.lectureGroup);
+      if (group) {
+        const lectureClass = group.classes.find(c => c.subject === subject.name && c.type === 'Lecture');
+        if (lectureClass) {
+          classes.push({ ...lectureClass, groupName: group.name });
+        }
+      }
+    }
+    
+    // Add section
+    if (selections.sectionGroup) {
+      const group = groups.find(g => g.name === selections.sectionGroup);
+      if (group) {
+        const sectionClass = group.classes.find(c => c.subject === subject.name && c.type === 'Section');
+        if (sectionClass) {
+          classes.push({ ...sectionClass, groupName: group.name });
+        }
+      }
+    }
+    
+    // Add lab
+    if (selections.labGroup) {
+      const group = groups.find(g => g.name === selections.labGroup);
+      if (group) {
+        const labClass = group.classes.find(c => c.subject === subject.name && c.type === 'Lab');
+        if (labClass) {
+          classes.push({ ...labClass, groupName: group.name });
+        }
+      }
+    }
+  });
+  
+  if (classes.length === 0) {
+    alert('Please select at least one group for your schedule.');
+    return;
+  }
+  
+  // Check for time conflicts
+  let conflict = false;
+  for (let i = 0; i < classes.length; i++) {
+    for (let j = i + 1; j < classes.length; j++) {
+      if (clash(classes[i], classes[j])) {
+        conflict = true;
+        break;
+      }
+    }
+    if (conflict) break;
+  }
+  
+  if (conflict) {
+    alert('⚠️ Warning: There is a time conflict in your selected schedule! Some classes overlap.');
+  }
+  
+  // Build schedule table
+  const table = buildScheduleTable(classes);
+  
+  document.getElementById('myScheduleTable').innerHTML = '';
+  document.getElementById('myScheduleTable').appendChild(table);
+  document.getElementById('myScheduleResult').style.display = 'block';
+  
+  showNotification(conflict ? '⚠️ Schedule has conflicts' : '✅ Schedule generated');
+}
+
+function buildScheduleTable(classes) {
+  const tableContainer = document.createElement('div');
+  tableContainer.className = 'schedule-table-container';
+  
+  const table = document.createElement('table');
+  table.className = 'schedule-table';
+  
+  table.innerHTML = `
+    <thead>
+      <tr>
+        <th class="day-header">Day</th>
+        <th class="time-header">Lecture 1<br><small>8:30-10:00</small></th>
+        <th class="time-header">Lecture 2<br><small>10:30-12:00</small></th>
+        <th class="time-header">Lecture 3<br><small>12:30-2:00</small></th>
+        <th class="time-header">Lecture 4<br><small>2:30-4:00</small></th>
+        <th class="time-header">Lecture 5<br><small>4:30-6:00</small></th>
+        <th class="time-header">Lecture 6<br><small>6:30-8:00</small></th>
+      </tr>
+    </thead>
+    <tbody id="my-schedule-tbody"></tbody>
+  `;
+  
+  const tbody = table.querySelector('#my-schedule-tbody');
+  
+  const classesByDay = {};
+  days.forEach(day => classesByDay[day] = Array(6).fill(null));
+  
+  classes.forEach(cls => {
+    classesByDay[cls.day][cls.timeSlot] = cls;
+  });
+  
+  days.forEach(day => {
+    const row = document.createElement('tr');
+    
+    const dayCell = document.createElement('td');
+    dayCell.className = 'day-header';
+    dayCell.textContent = day;
+    dayCell.style.fontWeight = '600';
+    row.appendChild(dayCell);
+    
+    for (let i = 0; i < 6; i++) {
+      const cell = document.createElement('td');
+      cell.className = 'empty-cell';
+      
+      const cls = classesByDay[day][i];
+      if (cls) {
+        const subjectData = subjects.find(s => s.name === cls.subject);
+        const color = subjectData ? subjectData.color : colorPalette[0];
+        
+        const hasInstructor = cls.name && cls.name.trim() !== '';
+        
+        const classBox = document.createElement('div');
+        classBox.className = 'class-box';
+        classBox.style.background = color.light;
+        classBox.style.borderLeft = `3px solid ${color.dark}`;
+        classBox.innerHTML = `
+          <div class="class-subject" style="background:${color.dark}; color:white;">${cls.subject}</div>
+          ${hasInstructor ? 
+            `<div class="class-doctor" style="color:${color.dark};">${cls.name}</div>` : 
+            `<div class="no-instructor">Instructor not assigned</div>`
+          }
+          <div class="class-type" style="background:${color.dark}; color:white;">${cls.type}</div>
+          <div class="class-group" style="color:${color.dark};">${cls.groupName}</div>
+          <div style="font-size:10px; color:${color.dark}; margin-top:3px;">${fromMin(cls.start)}-${fromMin(cls.end)}</div>
+        `;
+        cell.appendChild(classBox);
+      }
+      
+      row.appendChild(cell);
+    }
+    
+    tbody.appendChild(row);
+  });
+  
+  tableContainer.appendChild(table);
+  return tableContainer;
+}
+
+/******** DOCTOR SCHEDULE (TAB 7) ********/
+function populateDoctorSelector() {
+  const selector = document.getElementById('doctorSelector');
+  selector.innerHTML = '<option value="">-- Choose a doctor --</option>';
+  
+  const doctorSet = new Set();
+  
+  groups.forEach(group => {
+    group.classes.forEach(cls => {
+      if (cls.name && cls.name.trim() !== '') {
+        doctorSet.add(cls.name);
+      }
+    });
+  });
+  
+  const doctors = Array.from(doctorSet).sort();
+  doctors.forEach(doctor => {
+    selector.innerHTML += `<option value="${doctor}">${doctor}</option>`;
+  });
+}
+
+function renderDoctorSchedule() {
+  const selector = document.getElementById('doctorSelector');
+  const doctorName = selector.value;
+  
+  if (!doctorName) {
+    alert('Please select a doctor.');
+    return;
+  }
+  
+  // Collect all classes taught by this doctor
+  const classes = [];
+  
+  groups.forEach(group => {
+    group.classes.forEach(cls => {
+      if (cls.name === doctorName) {
+        classes.push({ ...cls, groupName: group.name });
+      }
+    });
+  });
+  
+  if (classes.length === 0) {
+    alert('No classes found for this doctor.');
+    return;
+  }
+  
+  // Build schedule table
+  const table = buildScheduleTable(classes);
+  
+  document.getElementById('doctorScheduleTitle').innerHTML = `👨‍⚕️ Schedule for ${doctorName}`;
+  document.getElementById('doctorScheduleTable').innerHTML = '';
+  document.getElementById('doctorScheduleTable').appendChild(table);
+  document.getElementById('doctorScheduleResult').style.display = 'block';
+}
+
+/******** SCHEDULE GENERATION FUNCTIONS ********/
+function toMin(t) { 
+  if (!t) return 0; 
+  if (typeof t === 'number') return t;
+  let [h, m] = t.split(':'); 
+  return parseInt(h) * 60 + parseInt(m || 0); 
+}
+
+function fromMin(m) { 
+  const hours = Math.floor(m / 60);
+  const minutes = m % 60;
+  const ampm = hours >= 12 ? 'PM' : 'AM';
+  const displayHours = hours % 12 || 12;
+  return `${displayHours}:${minutes.toString().padStart(2, '0')} ${ampm}`;
+}
+
+function clash(a, b) { 
+  return a.day === b.day && !(a.end <= b.start || b.end <= a.start); 
+}
+
+function calculateGaps(schedule) {
+  let totalGap = 0;
+  const classesByDay = {};
+  
+  schedule.forEach(cls => {
+    if (!classesByDay[cls.day]) {
+      classesByDay[cls.day] = [];
+    }
+    classesByDay[cls.day].push(cls);
+  });
+  
+  for (const day in classesByDay) {
+    const dayClasses = classesByDay[day].sort((a, b) => a.start - b.start);
+    
+    for (let i = 0; i < dayClasses.length - 1; i++) {
+      const current = dayClasses[i];
+      const next = dayClasses[i + 1];
+      const gap = next.start - current.end;
+      
+      if (gap > 30) {
+        totalGap += (gap - 30);
+      }
+    }
+  }
+  
+  return totalGap;
+}
+
+function calculateDaysCount(schedule) {
+  const uniqueDays = new Set();
+  schedule.forEach(cls => uniqueDays.add(cls.day));
+  return uniqueDays.size;
+}
+
+function calculateBalancedScore(schedule, maxDays, maxGaps) {
+  const daysCount = calculateDaysCount(schedule);
+  const gapsCount = calculateGaps(schedule);
+  
+  const daysScore = (1 - (daysCount / maxDays)) * 100;
+  const gapsScore = (1 - (gapsCount / maxGaps)) * 100;
+  
+  return (daysScore * 0.5) + (gapsScore * 0.5);
+}
+
+function generateSchedules() {
+  const optionMinDays = document.getElementById('optionMinDays').checked;
+  const optionMinGaps = document.getElementById('optionMinGaps').checked;
+  const optionBalanced = document.getElementById('optionBalanced').checked;
+  const optionAll = document.getElementById('optionAll').checked;
+  
+  if (!optionMinDays && !optionMinGaps && !optionBalanced && !optionAll) {
+    alert("Please select at least one schedule generation option.");
+    return;
+  }
+  
+  // Get selected subjects (from Tab 3)
+  const selectedSubjects = subjects.filter(s => s.selected !== false).map(s => s.name);
+  
+  if (selectedSubjects.length === 0) {
+    alert("Please select at least one subject to include in schedule generation.");
+    return;
+  }
+  
+  if (groups.length === 0) {
+    alert("Please add at least one group");
+    return;
+  }
+  
+  // Collect all possible class combinations per selected subject
+  let options = {};
+  selectedSubjects.forEach(s => options[s] = []);
+  
+  // For each subject, get available groups that have the subject
+  selectedSubjects.forEach(s => {
+    const groupsForSubject = getGroupsForSubject(s);
+    
+    groupsForSubject.forEach(g => {
+      // Check if group is available for this subject
+      const isGroupAvailable = isGroupAvailableForSubject(s, g.name);
+      if (!isGroupAvailable) {
+        return; // Skip unavailable groups
+      }
+      
+      let pack = g.classes.filter(c => c.subject === s);
+      if (!pack.length) return;
+      
+      // Check if this pack matches preferences
+      let ok = true;
+      pack.forEach(c => {
+        let pref = document.getElementById(`pref_${s}_${c.type}`)?.value || 'Any';
+        if (pref !== 'Any' && pref !== c.name) {
+          // If preferred doctor is not available in this group, we still consider it
+          // because we might need to fall back to "Any" doctor
+          // We'll handle this in the backtracking
+        }
+      });
+      
+      options[s].push({pack: pack, group: g.name});
+    });
+  });
+  
+  // Check if any subject has no options
+  const subjectsWithNoOptions = [];
+  for (let subject in options) {
+    if (options[subject].length === 0) {
+      subjectsWithNoOptions.push(subject);
+    }
+  }
+  
+  if (subjectsWithNoOptions.length > 0) {
+    alert(`No valid classes found for "${subjectsWithNoOptions.join(', ')}" based on availability and preferences. Try adjusting your preferences or availability settings.`);
+    return;
+  }
+  
+  allSchedules = [];
+  let subjectList = Object.keys(options);
+  
+  function backtrack(index, current, groupsUsed) {
+    if (index === subjectList.length) {
+      const scheduleClasses = current.flat().map(cls => ({
+        ...cls,
+        groupName: cls.groupName || groupsUsed.find(g => current.flat().some(c => 
+          c.subject === cls.subject && c.type === cls.type && c.day === cls.day && c.timeSlot === cls.timeSlot
+        ))
+      }));
+      
+      allSchedules.push({
+        classes: scheduleClasses,
+        groups: [...new Set(groupsUsed)],
+        daysCount: calculateDaysCount(scheduleClasses),
+        gaps: calculateGaps(scheduleClasses),
+        id: allSchedules.length + 1
+      });
+      return;
+    }
+    
+    const subject = subjectList[index];
+    for (let option of options[subject]) {
+      let valid = true;
+      
+      // Check for time conflicts
+      for (let newClass of option.pack) {
+        for (let existingClass of current.flat()) {
+          if (clash(newClass, existingClass)) {
+            valid = false;
+            break;
+          }
+        }
+        if (!valid) break;
+      }
+      
+      if (valid) {
+        // Add group name to each class in the pack
+        const packWithGroup = option.pack.map(cls => ({
+          ...cls,
+          groupName: option.group
+        }));
+        
+        backtrack(index + 1, [...current, packWithGroup], [...groupsUsed, option.group]);
+      }
+    }
+  }
+  
+  backtrack(0, [], []);
+  
+  // Filter and display schedules based on selected options
+  displaySelectedSchedules(allSchedules, optionMinDays, optionMinGaps, optionBalanced, optionAll);
+}
+
+function displaySelectedSchedules(allSchedules, minDays, minGaps, balanced, all) {
+  if (allSchedules.length === 0) {
+    document.getElementById('scheduleResults').innerHTML = `
+      <div class="box" style="text-align:center; padding:30px;">
+        <h3 style="color:#e74c3c;">No Valid Schedules Found</h3>
+        <p>Try adjusting your preferences or adding more classes to groups.</p>
+      </div>
+    `;
+    return;
+  }
+  
+  let filteredSchedules = [];
+  let selectedOptions = [];
+  
+  if (minDays) {
+    const minDaysValue = Math.min(...allSchedules.map(s => s.daysCount));
+    const minDaysSchedules = allSchedules.filter(s => s.daysCount === minDaysValue);
+    
+    if (minDaysSchedules.length > 0) {
+      filteredSchedules = filteredSchedules.concat(minDaysSchedules);
+      selectedOptions.push({
+        title: "Minimum Days Schedule",
+        description: `Schedules with only ${minDaysValue} days at university`,
+        color: "#27ae60",
+        schedules: minDaysSchedules
+      });
+    }
+  }
+  
+  if (minGaps) {
+    const minGapsValue = Math.min(...allSchedules.map(s => s.gaps));
+    const minGapsSchedules = allSchedules.filter(s => s.gaps === minGapsValue);
+    
+    if (minGapsSchedules.length > 0) {
+      const newSchedules = minGapsSchedules.filter(s => 
+        !filteredSchedules.some(fs => fs.id === s.id)
+      );
+      filteredSchedules = filteredSchedules.concat(newSchedules);
+      selectedOptions.push({
+        title: "Minimal Gaps Schedule",
+        description: `Schedules with minimal gaps between classes (${minGapsValue} minutes total)`,
+        color: "#e67e22",
+        schedules: newSchedules
+      });
+    }
+  }
+  
+  if (balanced) {
+    const maxDays = Math.max(...allSchedules.map(s => s.daysCount));
+    const maxGaps = Math.max(...allSchedules.map(s => s.gaps));
+    
+    allSchedules.forEach(schedule => {
+      schedule.balancedScore = calculateBalancedScore(schedule.classes, maxDays, maxGaps);
+    });
+    
+    const balancedSchedules = [...allSchedules]
+      .sort((a, b) => b.balancedScore - a.balancedScore)
+      .slice(0, 3);
+    
+    if (balancedSchedules.length > 0) {
+      const newSchedules = balancedSchedules.filter(s => 
+        !filteredSchedules.some(fs => fs.id === s.id)
+      );
+      filteredSchedules = filteredSchedules.concat(newSchedules);
+      selectedOptions.push({
+        title: "Balanced Schedule",
+        description: "Best balance between minimum days and minimal gaps",
+        color: "#9b59b6",
+        schedules: newSchedules
+      });
+    }
+  }
+  
+  if (all) {
+    const allSchedulesFiltered = allSchedules.filter(s => 
+      !filteredSchedules.some(fs => fs.id === s.id)
+    );
+    filteredSchedules = filteredSchedules.concat(allSchedulesFiltered);
+    selectedOptions.push({
+      title: "All Possible Schedules",
+      description: `All ${allSchedulesFiltered.length} valid schedule combinations`,
+      color: "#3498db",
+      schedules: allSchedulesFiltered
+    });
+  }
+  
+  // Remove duplicates
+  const uniqueSchedules = [];
+  const seen = new Set();
+  
+  filteredSchedules.forEach(schedule => {
+    if (!seen.has(schedule.id)) {
+      seen.add(schedule.id);
+      uniqueSchedules.push(schedule);
+    }
+  });
+  
+  // Display the schedules
+  displaySchedules(uniqueSchedules, selectedOptions);
+}
+
+function displaySchedules(schedules, selectedOptions) {
+  const scheduleResults = document.getElementById('scheduleResults');
+  scheduleResults.innerHTML = '';
+  
+  if (schedules.length === 0) {
+    scheduleResults.innerHTML = `
+      <div class="box" style="text-align:center; padding:30px;">
+        <h3 style="color:#e74c3c;">No Schedules Match Your Criteria</h3>
+        <p>Try selecting different generation options or adjusting your preferences.</p>
+      </div>
+    `;
+    return;
+  }
+  
+  const summary = document.createElement('div');
+  summary.className = 'box';
+  summary.style.background = 'linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%)';
+  
+  let summaryHTML = `<h3 style="margin-top: 0; color: #2c3e50;">📊 Schedule Generation Results</h3>`;
+  
+  // Show that we're using availability filter if any subjects are selected
+  if (selectedSubjectsForAvailability.size > 0) {
+    summaryHTML += `
+      <div style="margin: 10px 0; padding: 10px; background: #27ae60; color: white; border-radius: 5px; display: inline-block;">
+        ✅ Using availability filter from Tab 4
+      </div>
+    `;
+  }
+  
+  selectedOptions.forEach(option => {
+    if (option.schedules.length > 0) {
+      summaryHTML += `
+        <div style="margin: 15px 0; padding: 10px; background: white; border-radius: 5px; border-left: 4px solid ${option.color};">
+          <div style="display: flex; justify-content: space-between; align-items: center;">
+            <h4 style="margin: 0; color: ${option.color};">${option.title}</h4>
+            <span style="background: ${option.color}; color: white; padding: 2px 8px; border-radius: 10px; font-size: 12px;">
+              ${option.schedules.length} schedule${option.schedules.length !== 1 ? 's' : ''}
+            </span>
+          </div>
+          <p style="margin: 5px 0 0 0; color: #7f8c8d; font-size: 14px;">${option.description}</p>
+        </div>
+      `;
+    }
+  });
+  
+  summaryHTML += `<p style="margin-top: 15px; color: #2c3e50; font-weight: 600;">Total: ${schedules.length} unique schedule${schedules.length !== 1 ? 's' : ''} found</p>`;
+  summary.innerHTML = summaryHTML;
+  scheduleResults.appendChild(summary);
+  
+  let scheduleCounter = 0;
+  
+  schedules.forEach((scheduleData, index) => {
+    const schedule = scheduleData.classes;
+    const scheduleDiv = document.createElement('div');
+    scheduleDiv.className = 'result-schedule';
+    scheduleDiv.id = `schedule-${index}`;
+    
+    let optionType = "Custom";
+    let optionColor = "#7f8c8d";
+    
+    for (const option of selectedOptions) {
+      if (option.schedules.some(s => s.id === scheduleData.id)) {
+        optionType = option.title;
+        optionColor = option.color;
+        break;
+      }
+    }
+    
+    const classesWithoutInstructors = schedule.filter(c => !c.name || c.name.trim() === '').length;
+    
+    const scheduleTitle = document.createElement('h3');
+    scheduleTitle.innerHTML = `
+      <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap;">
+        <div>
+          <span style="color: ${optionColor};">${optionType}</span> - Schedule ${++scheduleCounter}
+          <span style="font-size: 12px; color: #7f8c8d; margin-left: 10px;">
+            📅 ${scheduleData.daysCount} days | ⏰ ${scheduleData.gaps} min gaps
+          </span>
+        </div>
+        <div style="display: flex; gap: 10px; font-size: 12px;">
+          <span style="background: #ecf0f1; padding: 2px 8px; border-radius: 10px;">
+            ${schedule.length} classes
+          </span>
+          ${classesWithoutInstructors > 0 ? 
+            `<span style="background: #fdebd0; padding: 2px 8px; border-radius: 10px; color: #e67e22;">
+              ${classesWithoutInstructors} without instructor
+            </span>` : ''
+          }
+        </div>
+      </div>
+    `;
+    scheduleDiv.appendChild(scheduleTitle);
+    
+    const tableContainer = buildScheduleTable(schedule);
+    scheduleDiv.appendChild(tableContainer);
+    scheduleResults.appendChild(scheduleDiv);
+  });
+}
+
+// Close modal when clicking outside
+window.onclick = function(event) {
+  const modals = ['editInstructorModal', 'editSubjectModal', 'editGroupModal'];
+  modals.forEach(modalId => {
+    const modal = document.getElementById(modalId);
+    if (event.target == modal) {
+      if (modalId === 'editInstructorModal') closeEditModal();
+      if (modalId === 'editSubjectModal') closeEditSubjectModal();
+      if (modalId === 'editGroupModal') closeEditGroupModal();
+    }
+  });
+}
+
+// Load data from browser when page loads
+window.addEventListener('load', () => {
+  loadFromBrowser();
+});
+
+// Initialize
+updateClassSubjectDropdown();
+renderSubjects();
+</script>
+
+</body>
+</html>
