@@ -1,2 +1,3 @@
 # AAST-University-Custom-Schedule
 University Schedule Builder is an interactive web tool that helps students create personalized class schedules by managing subjects, groups, and instructor preferences. It offers automatic schedule generation based on criteria like minimum days or gaps, a custom schedule builder with room numbers, and the ability to export schedules as images. The app also includes a Ramadan time toggle and a doctor schedule viewer. All data is stored locally and can be exported/imported as JSON. This project was developed with the assistance of AI by DeepSeek.
+https://youssof33.github.io/AAST-University-Custom-Schedule/
