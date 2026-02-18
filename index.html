@@ -417,12 +417,18 @@
       box-shadow: 0 2px 5px rgba(0,0,0,0.1);
     }
     
-    /* Export button */
+    /* Export and Ramadan buttons */
     .export-image-btn {
       background: #f39c12;
     }
     .export-image-btn:hover {
       background: #e67e22;
+    }
+    .ramadan-btn {
+      background: #2c3e50;
+    }
+    .ramadan-btn:hover {
+      background: #1a252f;
     }
   </style>
 </head>
@@ -726,7 +732,7 @@
         <strong>Instructions:</strong> 
         For each subject you're taking, select the specific group for Lecture, Section, and Lab (if available), 
         and enter the room number below each group. Your selections will be combined into one complete weekly schedule.
-        You can then export the schedule as a professional image.
+        You can then export the schedule as a professional image. Use the Ramadan button to switch to Ramadan lecture times.
       </p>
     </div>
     
@@ -743,6 +749,9 @@
       </button>
       <button onclick="exportScheduleAsImage()" id="exportScheduleBtn" class="export-image-btn" style="flex: 1; background: #f39c12;" disabled>
         📸 Export as Image
+      </button>
+      <button onclick="toggleTimeMode()" id="ramadanBtn" class="ramadan-btn" style="flex: 1; background: #2c3e50;" disabled>
+        🌙 Switch to Ramadan Times
       </button>
     </div>
     
@@ -801,6 +810,10 @@ let selectedSubjectsForAvailability = new Set();
 
 // Custom schedule selections with rooms
 let myScheduleSelections = {}; // { subjectName: { lectureGroup: null, sectionGroup: null, labGroup: null, lectureRoom: '', sectionRoom: '', labRoom: '' } }
+
+// For storing the current schedule classes to allow re-rendering with different time mode
+let currentScheduleClasses = null;
+let currentTimeMode = 'normal'; // 'normal' or 'ramadan'
 
 // Better color palette - easy on eyes with good contrast
 const colorPalette = [
@@ -934,7 +947,7 @@ function saveToBrowser() {
       selectedSubjectsForAvailability: Array.from(selectedSubjectsForAvailability),
       myScheduleSelections: myScheduleSelections,
       timestamp: new Date().toISOString(),
-      version: '7.0'
+      version: '8.0'
     };
     
     localStorage.setItem('universityScheduleData', JSON.stringify(data));
@@ -951,7 +964,7 @@ function loadFromBrowser() {
       const data = JSON.parse(saved);
       
       let processedData = data;
-      if (!data.version || data.version === '1.0' || data.version === '2.0' || data.version === '3.0' || data.version === '4.0' || data.version === '5.0' || data.version === '6.0') {
+      if (!data.version || data.version === '1.0' || data.version === '2.0' || data.version === '3.0' || data.version === '4.0' || data.version === '5.0' || data.version === '6.0' || data.version === '7.0') {
         processedData = convertOldFormatToNew(data);
       }
       
@@ -1049,7 +1062,7 @@ function exportData() {
       selectedSubjectsForAvailability: Array.from(selectedSubjectsForAvailability),
       myScheduleSelections: myScheduleSelections,
       timestamp: new Date().toISOString(),
-      version: '7.0'
+      version: '8.0'
     };
     
     const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
@@ -1082,7 +1095,7 @@ function importData(event) {
       }
       
       let processedData = data;
-      if (!data.version || data.version === '1.0' || data.version === '2.0' || data.version === '3.0' || data.version === '4.0' || data.version === '5.0' || data.version === '6.0') {
+      if (!data.version || data.version === '1.0' || data.version === '2.0' || data.version === '3.0' || data.version === '4.0' || data.version === '5.0' || data.version === '6.0' || data.version === '7.0') {
         processedData = convertOldFormatToNew(data);
         showNotification('🔄 Converted old format to new format');
       }
@@ -1153,6 +1166,8 @@ function resetAll() {
   groupAvailabilityData = {};
   selectedSubjectsForAvailability = new Set();
   myScheduleSelections = {};
+  currentScheduleClasses = null;
+  currentTimeMode = 'normal';
   
   localStorage.removeItem('universityScheduleData');
   
@@ -1176,8 +1191,9 @@ function resetAll() {
   document.getElementById('subjectName').value = '';
   document.getElementById('className').value = '';
   
-  // Disable export button
+  // Disable export and ramadan buttons
   document.getElementById('exportScheduleBtn').disabled = true;
+  document.getElementById('ramadanBtn').disabled = true;
   
   showNotification('🔄 All data has been reset');
 }
@@ -2371,6 +2387,8 @@ function clearMyCustomSchedule() {
   renderCustomSchedulePicker();
   document.getElementById('myScheduleResult').style.display = 'none';
   document.getElementById('exportScheduleBtn').disabled = true;
+  document.getElementById('ramadanBtn').disabled = true;
+  currentScheduleClasses = null;
   autoSave();
   showNotification('✅ Custom schedule cleared');
 }
@@ -2457,15 +2475,45 @@ function renderMyCustomSchedule() {
     alert('⚠️ Warning: There is a time conflict in your selected schedule! Some classes overlap.');
   }
   
-  // Build schedule table with rooms
-  const table = buildScheduleTableWithRooms(classes);
+  // Store classes for later toggling
+  currentScheduleClasses = classes;
   
-  document.getElementById('myScheduleTable').innerHTML = '';
-  document.getElementById('myScheduleTable').appendChild(table);
+  // Display the schedule with current time mode
+  displayScheduleTable(classes);
+  
   document.getElementById('myScheduleResult').style.display = 'block';
   document.getElementById('exportScheduleBtn').disabled = false;
+  document.getElementById('ramadanBtn').disabled = false;
   
   showNotification(conflict ? '⚠️ Schedule has conflicts' : '✅ Schedule generated');
+}
+
+function displayScheduleTable(classes) {
+  const tableContainer = buildScheduleTableWithRooms(classes);
+  document.getElementById('myScheduleTable').innerHTML = '';
+  document.getElementById('myScheduleTable').appendChild(tableContainer);
+}
+
+function getTimeHeaders(mode) {
+  if (mode === 'ramadan') {
+    return [
+      'Lecture 1<br><small>9:30-10:25</small>',
+      'Lecture 2<br><small>10:30-11:25</small>',
+      'Lecture 3<br><small>11:30-12:25</small>',
+      'Lecture 4<br><small>12:30-1:25</small>',
+      'Lecture 5<br><small>1:30-2:25</small>',
+      'Lecture 6<br><small>2:30-3:25</small>'
+    ];
+  } else {
+    return [
+      'Lecture 1<br><small>8:30-10:00</small>',
+      'Lecture 2<br><small>10:30-12:00</small>',
+      'Lecture 3<br><small>12:30-2:00</small>',
+      'Lecture 4<br><small>2:30-4:00</small>',
+      'Lecture 5<br><small>4:30-6:00</small>',
+      'Lecture 6<br><small>6:30-8:00</small>'
+    ];
+  }
 }
 
 function buildScheduleTableWithRooms(classes) {
@@ -2475,16 +2523,18 @@ function buildScheduleTableWithRooms(classes) {
   const table = document.createElement('table');
   table.className = 'schedule-table';
   
+  const headers = getTimeHeaders(currentTimeMode);
+  
   table.innerHTML = `
     <thead>
       <tr>
         <th class="day-header">Day</th>
-        <th class="time-header">Lecture 1<br><small>8:30-10:00</small></th>
-        <th class="time-header">Lecture 2<br><small>10:30-12:00</small></th>
-        <th class="time-header">Lecture 3<br><small>12:30-2:00</small></th>
-        <th class="time-header">Lecture 4<br><small>2:30-4:00</small></th>
-        <th class="time-header">Lecture 5<br><small>4:30-6:00</small></th>
-        <th class="time-header">Lecture 6<br><small>6:30-8:00</small></th>
+        <th class="time-header">${headers[0]}</th>
+        <th class="time-header">${headers[1]}</th>
+        <th class="time-header">${headers[2]}</th>
+        <th class="time-header">${headers[3]}</th>
+        <th class="time-header">${headers[4]}</th>
+        <th class="time-header">${headers[5]}</th>
       </tr>
     </thead>
     <tbody id="my-schedule-tbody"></tbody>
@@ -2551,6 +2601,26 @@ function buildScheduleTableWithRooms(classes) {
   return tableContainer;
 }
 
+/******** TIME MODE TOGGLE ********/
+function toggleTimeMode() {
+  if (!currentScheduleClasses) {
+    alert('Please generate a schedule first.');
+    return;
+  }
+  
+  if (currentTimeMode === 'normal') {
+    currentTimeMode = 'ramadan';
+    document.getElementById('ramadanBtn').textContent = '🌙 Switch to Normal Times';
+  } else {
+    currentTimeMode = 'normal';
+    document.getElementById('ramadanBtn').textContent = '🌙 Switch to Ramadan Times';
+  }
+  
+  // Re-render the schedule with the new time mode
+  displayScheduleTable(currentScheduleClasses);
+  showNotification(`Switched to ${currentTimeMode === 'ramadan' ? 'Ramadan' : 'normal'} times`);
+}
+
 /******** EXPORT SCHEDULE AS IMAGE ********/
 function exportScheduleAsImage() {
   const scheduleElement = document.getElementById('myScheduleTable');
@@ -2572,7 +2642,7 @@ function exportScheduleAsImage() {
   }).then(canvas => {
     // Create download link
     const link = document.createElement('a');
-    link.download = `my-schedule-${new Date().toISOString().slice(0,10)}.png`;
+    link.download = `my-schedule-${currentTimeMode}-${new Date().toISOString().slice(0,10)}.png`;
     link.href = canvas.toDataURL('image/png');
     link.click();
     
@@ -2645,16 +2715,19 @@ function buildDoctorScheduleTable(classes) {
   const table = document.createElement('table');
   table.className = 'schedule-table';
   
+  // Use normal times for doctor schedule (or could also be toggled, but for simplicity keep normal)
+  const headers = getTimeHeaders('normal');
+  
   table.innerHTML = `
     <thead>
       <tr>
         <th class="day-header">Day</th>
-        <th class="time-header">Lecture 1<br><small>8:30-10:00</small></th>
-        <th class="time-header">Lecture 2<br><small>10:30-12:00</small></th>
-        <th class="time-header">Lecture 3<br><small>12:30-2:00</small></th>
-        <th class="time-header">Lecture 4<br><small>2:30-4:00</small></th>
-        <th class="time-header">Lecture 5<br><small>4:30-6:00</small></th>
-        <th class="time-header">Lecture 6<br><small>6:30-8:00</small></th>
+        <th class="time-header">${headers[0]}</th>
+        <th class="time-header">${headers[1]}</th>
+        <th class="time-header">${headers[2]}</th>
+        <th class="time-header">${headers[3]}</th>
+        <th class="time-header">${headers[4]}</th>
+        <th class="time-header">${headers[5]}</th>
       </tr>
     </thead>
     <tbody id="doctor-schedule-tbody"></tbody>
@@ -3093,7 +3166,13 @@ function displaySchedules(schedules, selectedOptions) {
     `;
     scheduleDiv.appendChild(scheduleTitle);
     
-    const tableContainer = buildScheduleTableWithRooms(schedule); // Reuse room table builder (rooms will be empty)
+    // For generated schedules, we can also use the current time mode? Maybe keep normal.
+    // For simplicity, we'll keep normal times for generated schedules, but could also add toggle.
+    // We'll just use normal times for now.
+    const tempMode = currentTimeMode; // save
+    currentTimeMode = 'normal';
+    const tableContainer = buildScheduleTableWithRooms(schedule);
+    currentTimeMode = tempMode; // restore
     scheduleDiv.appendChild(tableContainer);
     scheduleResults.appendChild(scheduleDiv);
   });
@@ -3115,8 +3194,9 @@ window.onclick = function(event) {
 // Load data from browser when page loads
 window.addEventListener('load', () => {
   loadFromBrowser();
-  // Disable export button initially
+  // Disable export and ramadan buttons initially
   document.getElementById('exportScheduleBtn').disabled = true;
+  document.getElementById('ramadanBtn').disabled = true;
 });
 
 // Initialize
