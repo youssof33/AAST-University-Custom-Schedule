@@ -829,7 +829,7 @@ const colorPalette = [
   { name: "Amber", light: '#FFF3CD', dark: '#FFA726' }
 ];
 
-// Fixed lecture times
+// Fixed lecture times (normal)
 const lectureTimes = [
   { label: "Lecture 1", start: 8.5, end: 10, timeStr: "8:30 AM - 10:00 AM" },
   { label: "Lecture 2", start: 10.5, end: 12, timeStr: "10:30 AM - 12:00 PM" },
@@ -837,6 +837,16 @@ const lectureTimes = [
   { label: "Lecture 4", start: 14.5, end: 16, timeStr: "2:30 PM - 4:00 PM" },
   { label: "Lecture 5", start: 16.5, end: 18, timeStr: "4:30 PM - 6:00 PM" },
   { label: "Lecture 6", start: 18.5, end: 20, timeStr: "6:30 PM - 8:00 PM" }
+];
+
+// Ramadan times (as strings, no AM/PM)
+const ramadanTimes = [
+  "9:30-10:25",
+  "10:30-11:25",
+  "11:30-12:25",
+  "12:30-1:25",
+  "1:30-2:25",
+  "2:30-3:25"
 ];
 
 const days = ["Saturday", "Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday"];
@@ -947,7 +957,7 @@ function saveToBrowser() {
       selectedSubjectsForAvailability: Array.from(selectedSubjectsForAvailability),
       myScheduleSelections: myScheduleSelections,
       timestamp: new Date().toISOString(),
-      version: '8.0'
+      version: '9.0'
     };
     
     localStorage.setItem('universityScheduleData', JSON.stringify(data));
@@ -964,7 +974,7 @@ function loadFromBrowser() {
       const data = JSON.parse(saved);
       
       let processedData = data;
-      if (!data.version || data.version === '1.0' || data.version === '2.0' || data.version === '3.0' || data.version === '4.0' || data.version === '5.0' || data.version === '6.0' || data.version === '7.0') {
+      if (!data.version || data.version === '1.0' || data.version === '2.0' || data.version === '3.0' || data.version === '4.0' || data.version === '5.0' || data.version === '6.0' || data.version === '7.0' || data.version === '8.0') {
         processedData = convertOldFormatToNew(data);
       }
       
@@ -1062,7 +1072,7 @@ function exportData() {
       selectedSubjectsForAvailability: Array.from(selectedSubjectsForAvailability),
       myScheduleSelections: myScheduleSelections,
       timestamp: new Date().toISOString(),
-      version: '8.0'
+      version: '9.0'
     };
     
     const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
@@ -1095,7 +1105,7 @@ function importData(event) {
       }
       
       let processedData = data;
-      if (!data.version || data.version === '1.0' || data.version === '2.0' || data.version === '3.0' || data.version === '4.0' || data.version === '5.0' || data.version === '6.0' || data.version === '7.0') {
+      if (!data.version || data.version === '1.0' || data.version === '2.0' || data.version === '3.0' || data.version === '4.0' || data.version === '5.0' || data.version === '6.0' || data.version === '7.0' || data.version === '8.0') {
         processedData = convertOldFormatToNew(data);
         showNotification('🔄 Converted old format to new format');
       }
@@ -2516,6 +2526,14 @@ function getTimeHeaders(mode) {
   }
 }
 
+function getSlotTimeString(cls, mode) {
+  if (mode === 'ramadan') {
+    return ramadanTimes[cls.timeSlot];
+  } else {
+    return fromMin(cls.start) + '-' + fromMin(cls.end);
+  }
+}
+
 function buildScheduleTableWithRooms(classes) {
   const tableContainer = document.createElement('div');
   tableContainer.className = 'schedule-table-container';
@@ -2570,6 +2588,9 @@ function buildScheduleTableWithRooms(classes) {
         const hasInstructor = cls.name && cls.name.trim() !== '';
         const hasRoom = cls.room && cls.room.trim() !== '';
         
+        // Get the time string based on current mode
+        const timeDisplay = getSlotTimeString(cls, currentTimeMode);
+        
         const classBox = document.createElement('div');
         classBox.className = 'class-box';
         classBox.style.background = color.light;
@@ -2586,7 +2607,7 @@ function buildScheduleTableWithRooms(classes) {
             `<div class="class-room" style="background:${color.dark}; color:white;">Room: ${cls.room}</div>` : 
             `<div class="class-room" style="background:#95a5a6; color:white;">Room: TBD</div>`
           }
-          <div style="font-size:10px; color:${color.dark}; margin-top:3px;">${fromMin(cls.start)}-${fromMin(cls.end)}</div>
+          <div style="font-size:10px; color:${color.dark}; margin-top:3px;">${timeDisplay}</div>
         `;
         cell.appendChild(classBox);
       }
@@ -2699,7 +2720,7 @@ function renderDoctorSchedule() {
     return;
   }
   
-  // Build schedule table
+  // Build schedule table (keep normal times for doctor schedule)
   const table = buildDoctorScheduleTable(classes);
   
   document.getElementById('doctorScheduleTitle').innerHTML = `👨‍⚕️ Schedule for ${doctorName}`;
@@ -2715,7 +2736,7 @@ function buildDoctorScheduleTable(classes) {
   const table = document.createElement('table');
   table.className = 'schedule-table';
   
-  // Use normal times for doctor schedule (or could also be toggled, but for simplicity keep normal)
+  // Use normal times for doctor schedule (could also respect currentTimeMode if desired, but keep simple)
   const headers = getTimeHeaders('normal');
   
   table.innerHTML = `
@@ -3167,12 +3188,11 @@ function displaySchedules(schedules, selectedOptions) {
     scheduleDiv.appendChild(scheduleTitle);
     
     // For generated schedules, we can also use the current time mode? Maybe keep normal.
-    // For simplicity, we'll keep normal times for generated schedules, but could also add toggle.
-    // We'll just use normal times for now.
-    const tempMode = currentTimeMode; // save
+    // We'll use normal times for generated schedules for consistency.
+    const tempMode = currentTimeMode;
     currentTimeMode = 'normal';
     const tableContainer = buildScheduleTableWithRooms(schedule);
-    currentTimeMode = tempMode; // restore
+    currentTimeMode = tempMode;
     scheduleDiv.appendChild(tableContainer);
     scheduleResults.appendChild(scheduleDiv);
   });
